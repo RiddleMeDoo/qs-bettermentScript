@@ -1,12 +1,11 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
-// @namespace    http://tampermonkey.net/
+// @namespace    https://www.queslar.com
 // @version      1.0
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
-// @match        */www.queslar.com*
+// @match        *www.queslar.com*
 // @match        */queslar.com*
-// @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        none
 // ==/UserScript==
 
