@@ -13,7 +13,7 @@ class Script {
   constructor() {
     // Get quest data
     this.quest = {
-      numCompleted: 0,
+      questsCompleted: 0,
       numRefreshes: 0,
       refreshesUsed: 0,
       villageBold: 0,
@@ -27,43 +27,60 @@ class Script {
     this.currentPath = window.location.hash.split("/").splice(2).join();
   }
 
-  get gameData() { //ULTIMATE POWER
-    //Dynamically get an update of the game's state
-    //* Sometimes doesn't load (I don't know why)
+  async getGameData() { //ULTIMATE POWER
+    //Get an update of the game's state
     let rootElement = getAllAngularRootElements()[0].children[1]["__ngContext__"][30];
+    while(rootElement === undefined) { //Power comes with a price; wait for it to load
+      await new Promise(resolve => setTimeout(resolve, 500))
+      rootElement = getAllAngularRootElements()[0].children[1]["__ngContext__"][30];
+    }
     return rootElement.playerGeneralService;
   }
 
   async updateQuestData() {
+    let gameData = await this.getGameData();
     //Couldn't find an easier method than doing a POST request
-    this.gameData.httpClient.post('/player/load/misc', {}).subscribe(
+    gameData.httpClient.post('/player/load/misc', {}).subscribe(
       val => {this.quest.questsCompleted = val.playerMiscData.quests_completed},
       response => console.log('QBS: POST request failure', response)
     );
 
     await this.updateRefreshes();
-    if(this.gameData?.playerVillageService?.isInVillage) {
-      this.quest.villageBold = this.gameData.playerVillageService.strengths.bold.amount;
+    if(gameData.playerVillageService?.isInVillage === true) {
+      this.quest.villageBold = gameData.playerVillageService.strengths.bold.amount;
     }
     //Can't be bothered to calculate it accurately using all 4 stats
-    this.quest.baseStat = Math.min(15, this.gameData.playerStatsService?.strength * 0.0025);
+    this.quest.baseStat = Math.min(15, gameData.playerStatsService?.strength * 0.0025);
+    console.log('QBS: Quest updated', this.quest);
+
+    //Kept in case the above code doesn't work
+    /*
+    let ratioPromise = new Promise((resolve, reject) => {
+      if(gameData?.playerVillageService !== undefined && gameData.playerStatsService !== undefined && gameData.playerVillageService.isInVillage !== undefined) {
+        resolve();
+      } else reject();
+    });
+    ratioPromise.then(() => {
+      if(gameData.playerVillageService?.isInVillage) {
+        this.quest.villageBold = gameData.playerVillageService.strengths.bold.amount;
+      }
+      //Can't be bothered to calculate it accurately using all 4 stats
+      this.quest.baseStat = Math.min(15, gameData.playerStatsService?.strength * 0.0025);
+      console.log('QBS: Quest updated', this.quest);
+    }, rejection => console.log('QBS: ratioPromise rejected'));
+    */
   }
 
   async updateRefreshes() {
+    let gameData = await this.getGameData();
     //Wait for service to load
-    let servicePromise = new Promise((resolve, reject) => {
-      if(this.gameData.playerQuestService !== undefined) {
-        resolve(this.gameData.playerQuestService);
-      } else reject();
-    });
-    servicePromise.then(questService => {
-      this.quest.numRefreshes = questService.refreshesBought + 5;
-      this.quest.refreshesUsed = questService.refreshesUsed;
-      console.log('QBS: quests updated', this.quest.refreshesUsed);
-    },
-    rejection => {
-      console.log('QBS: Quest didnt load');
-    });
+    while(gameData?.playerQuestService?.refreshesUsed === undefined) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      gameData = await this.getGameData();
+    }
+    console.log('QBS: Loaded questService (refreshes)', gameData.playerQuestService.refreshesUsed);
+    this.quest.numRefreshes = gameData.playerQuestService.refreshesBought + 5;
+    this.quest.refreshesUsed = gameData.playerQuestService.refreshesUsed;
   }
 
   initObservers() {
@@ -88,11 +105,10 @@ class Script {
       this.personalQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
-      await this.updateRefreshes();
     }
   }
 
-  handlePersonalQuest(mutation) {
+  async handlePersonalQuest(mutation) {
     //Filter out any unneeded mutations
     if(mutation.addedNodes.length < 1 ||
       mutation.addedNodes[0].localName === 'mat-tooltip-component' ||
@@ -114,7 +130,7 @@ class Script {
         objective = parseInt(objectiveElem.innerText.split(" ")[0].replace(/,/g, ""));
       } else if(questTable.children.length > 0) { //Active quest
         //Update number of refreshes used, just in case
-        this.quest.refreshesUsed = this.gameData.playerQuestService.refreshesUsed;
+        await this.updateRefreshes();
 
         const objectiveElem = questTable.children[0].children[1];
         const actionsDone = parseInt(objectiveElem.innerText.split(" ")[0]);
@@ -156,8 +172,8 @@ class Script {
 
   getStatReward() {
     return {
-      max: Math.round((this.quests.questsCompleted/300+this.quests.baseStat+22.75)*(1+this.quests.villageBold*2/100)*1.09),
-      min: Math.round((this.quests.questsCompleted/300+this.quests.baseStat+8.5)*(1+this.quests.villageBold*2/100)*1.09),
+      max: Math.round((this.quest.questsCompleted/300+this.quest.baseStat+22.75)*(1+this.quest.villageBold*2/100)*1.09),
+      min: Math.round((this.quest.questsCompleted/300+this.quest.baseStat+8.5)*(1+this.quest.villageBold*2/100)*1.09),
     }
   }
 
