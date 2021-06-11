@@ -150,19 +150,22 @@ class Script {
     if(mutation.addedNodes.length < 1 ||
       mutation.addedNodes[0].nodeName === '#text' ||
       mutation.addedNodes[0].nodeName === 'TH' ||
-      mutation.addedNodes[0].nodeName === 'TR' ||
+      mutation.addedNodes[0].nodeName === 'TD' ||
       mutation.addedNodes[0].className === 'mat-ripple-element') {
       return;
     }
-    const questTable = mutation.target.tagName === 'TABLE' ? mutation.target : mutation.target.querySelector('table');
+    const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
 
     if(questTable) {
       //Add a column: header
-      const header = document.createElement('th');
-      header.innerText = 'End Time';
-      header.setAttribute('class',questTable?.firstChild?.firstChild?.firstChild.className);
-      questTable.firstChild.firstChild.appendChild(header);
-      
+      if(!document.getElementById('endTimeHeader')) {
+        const header = document.createElement('th');
+        header.innerText = 'End Time';
+        header.id = 'endTimeHeader'
+        header.setAttribute('class',questTable?.firstChild?.firstChild?.firstChild.className);
+        questTable.firstChild.firstChild.appendChild(header);
+     }
+
       //Add a column: td to every row
       const body = questTable.children[1];
       if(body.children.length > 2) { //No active quest
@@ -173,7 +176,7 @@ class Script {
             let requirement = parseInt(objective[0]);
             let timeElem = this.getTimeElem(requirement, row.firstChild.className);
             row.appendChild(timeElem);
-          } else { //Add N/A to end time
+          } else {
             let timeElem = this.getTimeElem(-1, row.firstChild.className);
             row.appendChild(timeElem);
           }
@@ -187,7 +190,7 @@ class Script {
         row.appendChild(timeElem);
       }
       //Add info row at the bottom of active quest
-      const infoRow = document.createTextNode('Time is in local time and is calculated assuming 20 active members. Accuracy not guaranteed.');
+      const infoRow = document.createTextNode('Time is in local time and is calculated assuming 20 active members.');
       infoRow.id = 'questExplanation';
       //Add quest info if there isn't one already
       if(!document.getElementById('questExplanation')) questTable.parentElement.appendChild(infoRow);
