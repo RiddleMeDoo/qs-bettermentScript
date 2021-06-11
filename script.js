@@ -190,7 +190,7 @@ class Script {
         row.appendChild(timeElem);
       }
       //Add info row at the bottom of active quest
-      const infoRow = document.createTextNode('Time is in local time and is calculated assuming 20 active members.');
+      const infoRow = document.createTextNode('Time is in local time and is calculated assuming 20 active members. The time is approximate and may not be accurate.');
       infoRow.id = 'questExplanation';
       //Add quest info if there isn't one already
       if(!document.getElementById('questExplanation')) questTable.parentElement.appendChild(infoRow);
