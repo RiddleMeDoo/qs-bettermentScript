@@ -51,24 +51,6 @@ class Script {
     }
     //Can't be bothered to calculate it accurately using all 4 stats
     this.quest.baseStat = Math.min(15, gameData.playerStatsService?.strength * 0.0025);
-    console.log('QBS: Quest updated', this.quest);
-
-    //Kept in case the above code doesn't work
-    /*
-    let ratioPromise = new Promise((resolve, reject) => {
-      if(gameData?.playerVillageService !== undefined && gameData.playerStatsService !== undefined && gameData.playerVillageService.isInVillage !== undefined) {
-        resolve();
-      } else reject();
-    });
-    ratioPromise.then(() => {
-      if(gameData.playerVillageService?.isInVillage) {
-        this.quest.villageBold = gameData.playerVillageService.strengths.bold.amount;
-      }
-      //Can't be bothered to calculate it accurately using all 4 stats
-      this.quest.baseStat = Math.min(15, gameData.playerStatsService?.strength * 0.0025);
-      console.log('QBS: Quest updated', this.quest);
-    }, rejection => console.log('QBS: ratioPromise rejected'));
-    */
   }
 
   async updateRefreshes() {
@@ -78,7 +60,6 @@ class Script {
       await new Promise(resolve => setTimeout(resolve, 500));
       gameData = await this.getGameData();
     }
-    console.log('QBS: Loaded questService (refreshes)', gameData.playerQuestService.refreshesUsed);
     this.quest.numRefreshes = gameData.playerQuestService.refreshesBought + 5;
     this.quest.refreshesUsed = gameData.playerQuestService.refreshesUsed;
   }
@@ -93,6 +74,7 @@ class Script {
     })
   }
 
+
   async handlePathChange() {
     const path = window.location.hash.split("/").slice(2);
     if(path.join() !== this.currentPath) {
@@ -103,6 +85,11 @@ class Script {
     if(path[path.length - 1] === 'quests' && path[0] === 'actions') {
       const target = document.querySelector('app-actions');
       this.personalQuestObserver.observe(target, {
+        childList: true, subtree: true, attributes: false,
+      });
+    } else if(path[path.length - 1] === 'quests' && path[0] === 'village') {
+      const target = document.querySelector('app-village');
+      this.villageQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
     }
@@ -158,8 +145,49 @@ class Script {
     }
   }
 
+
   handleVillageQuest(mutation) {
-    return; //Uninplemented
+    if(mutation.addedNodes.length < 1 ||
+      mutation.addedNodes[0].nodeName === '#text' ||
+      mutation.addedNodes[0].nodeName === 'TH' ||
+      mutation.addedNodes[0].nodeName === 'TR' ||
+      mutation.addedNodes[0].className === 'mat-ripple-element') {
+      return;
+    }
+    const questTable = mutation.target.tagName === 'TABLE' ? mutation.target : mutation.target.querySelector('table');
+
+    if(questTable) {
+      //Add a column: header
+      const header = document.createElement('th');
+      header.innerText = 'End Time';
+      header.setAttribute('class',questTable?.firstChild?.firstChild?.firstChild.className);
+      questTable.firstChild.firstChild.appendChild(header);
+      
+      //Add a column: td to every row
+      const body = questTable.children[1];
+      if(body.children.length > 2) { //No active quest
+        body.children.forEach(row => {
+          const objective = row.children[1].innerText.split(" ");
+          if(objective[objective.length - 1] === 'actions') { 
+            const requirement = parseInt(objective[2]);
+            const timeElem = this.getTimeElem(requirement, row.firstChild.className);
+            row.appendChild(timeElem);
+          }
+        });
+      } else if(body.children.length > 0) { //Active quest
+        //Add endTime to active quest's row
+        const row = body.firstChild
+        const actionsDone = parseInt(row.children[1].innerText.split(" ")[0]);
+        const requirement = parseInt(row.children[1].innerText.split(" ")[2]);
+        const timeElem = this.getTimeElem((requirement - actionsDone), row.firstChild.className);
+        row.appendChild(timeElem);
+      }
+      //Add info row at the bottom of active quest
+      const infoRow = document.createTextNode('Time is in local time and is calculated assuming 20 active members. Accuracy not guaranteed.');
+      infoRow.id = 'questExplanation';
+      //Add quest info if there isn't one already
+      if(!document.getElementById('questExplanation')) questTable.parentElement.appendChild(infoRow);
+    }
   }
 
   stopObserver(pathname) {
@@ -192,6 +220,16 @@ class Script {
     row.innerHTML = htmlInfo;
     row.id = 'questInfoRow';
     return row;
+  }
+
+  getTimeElem(actionsNeeded, className) {
+    const cell = document.createElement('td');
+
+    const date = new Date();
+    const finishTime = new Date(date.getTime() + actionsNeeded * 300).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
+    cell.innerText = finishTime;
+    cell.setAttribute('class', className);
+    return cell;
   }
 
   getRatioElem() {
