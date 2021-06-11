@@ -166,14 +166,18 @@ class Script {
       //Add a column: td to every row
       const body = questTable.children[1];
       if(body.children.length > 2) { //No active quest
-        body.children.forEach(row => {
-          const objective = row.children[1].innerText.split(" ");
-          if(objective[objective.length - 1] === 'actions') { 
-            const requirement = parseInt(objective[2]);
-            const timeElem = this.getTimeElem(requirement, row.firstChild.className);
+        for(let i = 0; i < body.children.length; i++) {
+          let row = body.children[i];
+          let objective = row.children[1].innerText.split(" ");
+          if(objective[objective.length - 1] === 'actions') {
+            let requirement = parseInt(objective[0]);
+            let timeElem = this.getTimeElem(requirement, row.firstChild.className);
+            row.appendChild(timeElem);
+          } else { //Add N/A to end time
+            let timeElem = this.getTimeElem(-1, row.firstChild.className);
             row.appendChild(timeElem);
           }
-        });
+        }
       } else if(body.children.length > 0) { //Active quest
         //Add endTime to active quest's row
         const row = body.firstChild
@@ -209,6 +213,7 @@ class Script {
     let row = document.createElement('tr');
 
     const date = new Date();
+    //actions*6000 = actions * 6 sec per action * 1000 milliseconds
     const finishTime = new Date(date.getTime() + actionsNeeded * 6000).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
     const finishPartyTime = new Date(date.getTime() + (actionsNeeded + 1440) * 6000).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
     const info = ['',`${this.quest.refreshesUsed}/${this.quest.numRefreshes} refreshes used`, '',
@@ -225,9 +230,14 @@ class Script {
   getTimeElem(actionsNeeded, className) {
     const cell = document.createElement('td');
 
-    const date = new Date();
-    const finishTime = new Date(date.getTime() + actionsNeeded * 300).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
-    cell.innerText = finishTime;
+    if(actionsNeeded > 0) {
+      const date = new Date();
+      //actions*300 = actions * 6 sec per action * 1000 milliseconds / 20 people
+      const finishTime = new Date(date.getTime() + actionsNeeded * 300).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
+      cell.innerText = finishTime;
+    } else {
+      cell.innerText = 'N/A';
+    }
     cell.setAttribute('class', className);
     return cell;
   }
