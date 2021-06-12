@@ -193,7 +193,9 @@ class Script {
       const infoRow = document.createTextNode('Time is in local time and is calculated assuming 20 active members. The time is approximate and may not be accurate.');
       infoRow.id = 'questExplanation';
       //Add quest info if there isn't one already
-      if(!document.getElementById('questExplanation')) questTable.parentElement.appendChild(infoRow);
+      if(questTable.parentElement.lastChild.id !== 'questExplanation') {
+        questTable.parentElement.appendChild(infoRow);
+      }
     }
   }
 
