@@ -4,8 +4,9 @@
 // @version      1.0
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
-// @match        *www.queslar.com*
 // @match        */queslar.com*
+// @match        *www.queslar.com*
+// @match        *queslar.com/*
 // @grant        none
 // ==/UserScript==
 
@@ -251,10 +252,10 @@ class Script {
     let row = document.createElement('tr');
     const stat = this.getStatReward();
     const avg = (this.quest.minActions/stat.max + this.quest.maxActions/stat.min) / 2;
-    const info = ['',
-      `Max Ratio: ${(this.quest.minActions/stat.max).toFixed(3)}`,
+    const info = ['Overall possible ratios, considering quests completed & village bold:',
+      `Best Ratio: ${(this.quest.minActions/stat.max).toFixed(3)}`,
       `Avg ratio: ${(avg).toFixed(3)}`,
-      `Min ratio: ${(this.quest.maxActions/stat.min).toFixed(3)}`
+      `Worst ratio: ${(this.quest.maxActions/stat.min).toFixed(3)}`
     ];
     let htmlInfo = '';
     for (let text of info) {
