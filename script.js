@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.1
+// @version      1.2
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @match        */queslar.com*
@@ -26,6 +26,11 @@ class Script {
     //observer stuff
     this.initObservers();
     this.currentPath = window.location.hash.split("/").splice(2).join();
+
+    //Listen for url path changes
+    await this.gameData()?.router.events.subscribe(event => {
+      if(event.navigationTrigger) await this.handlePathChange();
+    })
   }
 
   async getGameData() { //ULTIMATE POWER
@@ -76,34 +81,55 @@ class Script {
   }
 
 
-  async handlePathChange() {
-    const path = window.location.hash.split("/").slice(2);
+  async initPathDetection() {
+    let gameData = await this.getGameData();
+    gameData.router.events.subscribe(event => {
+      if(event.navigationTrigger) this.handlePathChange(event.url);
+    });
+  }
+
+
+  async handlePathChange(url) {
+    const path = url.split("/").slice(2);
     if(path.join() !== this.currentPath) {
       this.stopObserver(this.currentPath);
     }
     this.currentPath = path.join();
     //Activate observer if on a specific page
-    if(path[path.length - 1] === 'quests' && path[0] === 'actions') {
-      const target = document.querySelector('app-actions');
+    if(path[path.length - 1].toLowerCase() === 'quests' && path[0].toLowerCase() === 'actions') {
+      let target = document.querySelector('app-actions');
+      //Sometimes the script attempts to search for element before it loads in
+      while(!target) {
+        await new Promise(resolve => setTimeout(resolve, 200))
+        target = document.querySelector('app-actions');
+      }
       this.personalQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
-    } else if(path[path.length - 1] === 'quests' && path[0] === 'village') {
-      const target = document.querySelector('app-village');
+      this.handlePersonalQuest({target: target});
+
+    } else if(path[path.length - 1].toLowerCase() === 'quests' && path[0].toLowerCase() === 'village') {
+      let target = document.querySelector('app-village');
+      //Sometimes the script attempts to search for element before it loads in
+      while(!target) {
+        await new Promise(resolve => setTimeout(resolve, 200))
+        target = document.querySelector('app-village');
+      }
       this.villageQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
+      this.handleVillageQuest({target: target});
     }
   }
 
   async handlePersonalQuest(mutation) {
     //Filter out any unneeded mutations
-    if(mutation.addedNodes.length < 1 ||
-      mutation.addedNodes[0].localName === 'mat-tooltip-component' ||
-      mutation.addedNodes[0].nodeName === 'TH' ||
-      mutation.addedNodes[0].nodeName === 'TD' ||
-      mutation.addedNodes[0].nodeName === '#text' ||
-      mutation.addedNodes[0].className === 'mat-ripple-element') {
+    if(mutation?.addedNodes?.length < 1 ||
+      mutation?.addedNodes?.[0]?.localName === 'mat-tooltip-component' ||
+      mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
+      mutation?.addedNodes?.[0]?.nodeName === 'TD' ||
+      mutation?.addedNodes?.[0]?.nodeName === '#text' ||
+      mutation?.addedNodes?.[0]?.className === 'mat-ripple-element') {
       return;
     }
     const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
@@ -148,11 +174,11 @@ class Script {
 
 
   handleVillageQuest(mutation) {
-    if(mutation.addedNodes.length < 1 ||
-      mutation.addedNodes[0].nodeName === '#text' ||
-      mutation.addedNodes[0].nodeName === 'TH' ||
-      mutation.addedNodes[0].nodeName === 'TD' ||
-      mutation.addedNodes[0].className === 'mat-ripple-element') {
+    if(mutation?.addedNodes?.length < 1 ||
+      mutation?.addedNodes?.[0]?.nodeName === '#text' ||
+      mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
+      mutation?.addedNodes?.[0]?.nodeName === 'TD' ||
+      mutation?.addedNodes?.[0]?.className === 'mat-ripple-element') {
       return;
     }
     const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
@@ -254,23 +280,23 @@ class Script {
     const body = tableElem.children[1];
     for(let i = 0; i < body.children.length; i++) {
       const row = body.children[i];
-      if(body.children.length > 2) { //No active quest
-        const objective = row.children[1].innerText.split(" ");
-        if(objective[objective.length - 1] === 'actions' || objective[objective.length - 1] === 'battles') {
-          const requirement = parseInt(objective[0].replace(/,/g, ""));
-          const timeElem = this.getTimeElem(requirement, row.firstChild.className, isVillage);
-          row.appendChild(timeElem);
-        } else if(row.id !== 'questInfoRow') {
-          const timeElem = this.getTimeElem(-1, row.firstChild.className, isVillage);
-          row.appendChild(timeElem);
+      const objective = row.children[1].innerText.split(" ");
+      //End time is only applicable to certain quests
+      if(objective[objective.length - 1].toLowerCase() === 'actions' || objective[objective.length - 1].toLowerCase() === 'battles') {
+        let actionsLeft = 0;
+        if(body.children.length > 2) { //No active quest
+          actionsLeft = parseInt(objective[0].replace(/,/g, ""));
+        } else if(body.children.length > 0) { //Active quest
+          const actionsDone = parseInt(objective[0].replace(/,/g, ""));
+          const requirement = parseInt(objective[2].replace(/,/g, ""));
+          actionsLeft = requirement - actionsDone;
         }
-      } else if(body.children.length > 0) { //Active quest
-        const actionsDone = parseInt(row.children[1].innerText.split(" ")[0]);
-        const requirement = parseInt(row.children[1].innerText.split(" ")[2]);
-        const timeElem = this.getTimeElem((requirement - actionsDone), row.firstChild.className, isVillage);
+        const timeElem = this.getTimeElem(actionsLeft, row.firstChild.className, isVillage);
+        row.appendChild(timeElem);
+      } else if(row.id !== 'questInfoRow') {
+        const timeElem = this.getTimeElem(-1, row.firstChild.className, isVillage);
         row.appendChild(timeElem);
       }
-
     }
   }
 }
@@ -291,10 +317,8 @@ async function setupScript() {
     QBS = new Script();
     console.log('QBS: The script has been loaded.');
 
-    window.addEventListener('locationchange', function(){
-      QBS.handlePathChange();
-    })
     clearInterval(QBSLoader);
+    await QBS.initPathDetection();
     await QBS.updateQuestData();
   } else {
     console.log('QBS: Loading failed. Trying again...');
@@ -305,23 +329,3 @@ async function setupScript() {
     }
   }
 }
-
-
-//Code needed to detect hash (path) change in url
-history.pushState = ( f => function pushState(){
-  var ret = f.apply(this, arguments);
-  window.dispatchEvent(new Event('pushstate'));
-  window.dispatchEvent(new Event('locationchange'));
-  return ret;
-})(history.pushState);
-
-history.replaceState = ( f => function replaceState(){
-  var ret = f.apply(this, arguments);
-  window.dispatchEvent(new Event('replacestate'));
-  window.dispatchEvent(new Event('locationchange'));
-  return ret;
-})(history.replaceState);
-
-window.addEventListener('popstate',()=>{
-  window.dispatchEvent(new Event('locationchange'))
-});
