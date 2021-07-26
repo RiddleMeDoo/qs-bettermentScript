@@ -18,12 +18,15 @@ class Script {
       numRefreshes: 0,
       refreshesUsed: 0,
       villageBold: 0,
+      villageSize: 1,
+      villageNumRefreshes: 5,
+      villageRefreshesUsed: 0,
       baseStat: 15,
       minActions: 360,
       maxActions: 580,
     };
 
-    //observer stuff
+    //observer setup
     this.initObservers();
     this.currentPath = window.location.hash.split("/").splice(2).join();
 
@@ -53,7 +56,16 @@ class Script {
 
     await this.updateRefreshes();
     if(gameData.playerVillageService?.isInVillage === true) {
-      this.quest.villageBold = gameData.playerVillageService.strengths.bold.amount;
+      let villageService = gameData.playerVillageService;
+      //Wait for service to load
+      while(villageService === undefined) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        villageService = gameData.playerVillageService;
+      }
+      this.quest.villageBold = villageService.strengths.bold.amount;
+      this.quest.villageSize = villageService.general.members.length;
+      this.quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
+      this.quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
     }
     //Can't be bothered to calculate it accurately using all 4 stats
     this.quest.baseStat = Math.min(15, gameData.playerStatsService?.strength * 0.0025);
@@ -68,6 +80,13 @@ class Script {
     }
     this.quest.numRefreshes = gameData.playerQuestService.refreshesBought + 5;
     this.quest.refreshesUsed = gameData.playerQuestService.refreshesUsed;
+  }
+
+  async updateVillageRefreshes() {
+    let gameData = await this.getGameData();
+    let villageService = gameData.playerVillageService;
+    this.quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
+    this.quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
   }
 
   initObservers() {
@@ -106,7 +125,7 @@ class Script {
       this.personalQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
-      this.handlePersonalQuest({target: target});
+      await this.handlePersonalQuest({target: target});
 
     } else if(path[path.length - 1].toLowerCase() === 'quests' && path[0].toLowerCase() === 'village') {
       let target = document.querySelector('app-village');
@@ -118,7 +137,7 @@ class Script {
       this.villageQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
-      this.handleVillageQuest({target: target});
+      await this.handleVillageQuest({target: target});
     }
   }
 
@@ -173,7 +192,7 @@ class Script {
   }
 
 
-  handleVillageQuest(mutation) {
+  async handleVillageQuest(mutation) {
     if(mutation?.addedNodes?.length < 1 ||
       mutation?.addedNodes?.[0]?.nodeName === '#text' ||
       mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
@@ -184,10 +203,12 @@ class Script {
     const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
 
     if(questTable) {
+      await this.updateVillageRefreshes(); //Update for refreshes used
       this.addEndTimeColumn(questTable, true);
       
       //Add info text at the bottom of quest table
-      const infoRow = document.createTextNode('End time is calculated assuming 20 active members. The time is approximate and may not be accurate.');
+      const infoRow = document.createTextNode('End time is calculated assuming all members are active. The time is approximate and may not be accurate.' 
+        + `${this.quest.villageRefreshesUsed}/${this.quest.villageNumRefreshes} refreshes used.`);
       infoRow.id = 'questExplanation';
       if(questTable.parentElement.lastChild.id !== 'questExplanation') {
         questTable.parentElement.appendChild(infoRow);
@@ -232,7 +253,7 @@ class Script {
 
     if(actionsNeeded > 0) {
       const date = new Date();
-      const numPeople = isVillage ? 20 : 1;
+      const numPeople = isVillage ? this.quest.villageSize : 1;
       //actionsNeeded * 6 sec per action * 1000 milliseconds / numPeople
       const finishTime = new Date(date.getTime() + actionsNeeded * 6000 / numPeople).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
       cell.innerText = finishTime;
@@ -272,7 +293,7 @@ class Script {
       const header = document.createElement('th');
       header.innerText = 'End Time (local time)';
       header.id = 'endTimeHeader';
-      header.setAttribute('class', tableElem?.firstChild?.firstChild?.firstChild.className);
+      header.setAttribute('class', tableElem?.firstChild?.firstChild?.firstChild.className ?? 'mat-header-cell cdk-header-cell cdk-column-current mat-column-current ng-star-inserted');
       tableElem.firstChild.firstChild.appendChild(header);
     }
 
