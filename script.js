@@ -29,11 +29,6 @@ class Script {
     //observer setup
     this.initObservers();
     this.currentPath = window.location.hash.split("/").splice(2).join();
-
-    //Listen for url path changes
-    await this.gameData()?.router.events.subscribe(event => {
-      if(event.navigationTrigger) await this.handlePathChange();
-    })
   }
 
   async getGameData() { //ULTIMATE POWER
