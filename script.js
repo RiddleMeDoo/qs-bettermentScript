@@ -23,6 +23,7 @@ class Script {
       minActions: 360,
       maxActions: 580,
     };
+    this.playerId;
 
     //observer setup
     this.initObservers();
@@ -43,7 +44,10 @@ class Script {
     let gameData = await this.getGameData();
     //Couldn't find an easier method than doing a POST request
     gameData.httpClient.post('/player/load/misc', {}).subscribe(
-      val => {this.quest.questsCompleted = val.playerMiscData.quests_completed},
+      val => {
+        this.quest.questsCompleted = val.playerMiscData.quests_completed;
+        this.playerId = val.playerMiscData.player_id;
+      },
       response => console.log('QBS: POST request failure', response)
     );
 
@@ -62,6 +66,17 @@ class Script {
     }
     //Can't be bothered to calculate it accurately using all 4 stats
     this.quest.baseStat = Math.min(15, gameData.playerStatsService?.strength * 0.0025);
+  }
+
+  async getPartyActions() {
+    let gameData = await this.getGameData();
+    //Wait for service to load
+    while(gameData?.partyService?.partyOverview?.partyInformation === undefined) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      gameData = await this.getGameData();
+    }
+
+    return gameData.partyService.partyOverview.partyInformation[this.playerId].actions.daily_actions_remaining;
   }
 
   async updateRefreshes() {
@@ -161,21 +176,20 @@ class Script {
 
       //There are two states: active quest and no quest
       if(tableBody.children.length > 2) {//No quest
-        infoRow = this.getQuestRatioInfo(); //The bottom row that contains extra info
-        await this.insertEndTimeElem(tableBody, false, false);
+        infoRow = await this.insertEndTimeElem(tableBody, false, false);
 
       } else if(tableBody.children.length > 0) { //Active quest
         //Update number of refreshes used, just in case
         await this.updateRefreshes();
-        await this.insertEndTimeElem(tableBody, false, true);
-        //TODO: Duplicate code, consider placing elsewhere
-        const objectiveElemText = tableBody.children[0].children[1].innerText.split(" ");
-        if(objectiveElemText[3].toLowerCase() === 'actions' || objectiveElemText[3].toLowerCase() === 'survived') {
-          const actionsDone = parseInt(objectiveElemText[0]);
-          const objective = parseInt(objectiveElemText[2]);
-          infoRow = this.getQuestInfoElem(objective - actionsDone);
-        } else {
-          infoRow = this.getQuestInfoElem(-1);
+        infoRow = await this.insertEndTimeElem(tableBody, false, true);
+        //Special case: Gold reward quest
+        const rewardText = tableBody.children[0].children[2].innerText;
+        const reward = rewardText.split(" ");
+        if(reward[1].toLowerCase() === "gold") {
+          //Add a gold ratio
+          const actionsNeeded = parseInt(tableBody.children[0].children[1].innerText.split(" ")[2]);
+          const ratio = Math.round(parseInt(reward[0]) / actionsNeeded * 600).toLocaleString();
+          tableBody.children[0].children[2].innerText = `${rewardText} (${ratio} gold/hr)`;
         }
       } else {
         return;
@@ -237,14 +251,15 @@ class Script {
     }
   }
 
-  getQuestInfoElem(actionsNeeded) {
+  async getQuestInfoElem(actionsNeeded) {
+    const partyActions = await this.getPartyActions();
     let row = document.createElement('tr');
 
     const date = new Date();
     //actionsNeeded * 6000 = actions * 6 sec per action * 1000 milliseconds
-    const finishPartyTime = new Date(date.getTime() + (actionsNeeded + 1440) * 6000).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
+    const finishPartyTime = new Date(date.getTime() + (actionsNeeded + partyActions) * 6000).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
     const info = ['',`${this.quest.refreshesUsed}/${this.quest.numRefreshes} refreshes used`, '',
-      actionsNeeded >= 0 ? `End time (local time) with 1440 party actions: ${finishPartyTime}`: ''];
+      actionsNeeded >= 0 ? `End time (local time) with ${partyActions} party actions: ${finishPartyTime}`: ''];
     let htmlInfo = '';
     for (let text of info) {
       htmlInfo += `<td>${text}</td>`
@@ -273,11 +288,11 @@ class Script {
   getQuestRatioInfo() {
     let row = document.createElement('tr');
     const stat = this.getStatReward();
-    const avg = (this.quest.minActions/stat.max + this.quest.maxActions/stat.min) / 2;
+    const avg = (stat.max/this.quest.minActions + stat.min/this.quest.maxActions) / 2;
     const info = ['Overall possible ratios, considering quests completed & village bold:',
-      `Best Ratio: ${(this.quest.minActions/stat.max).toFixed(3)}`,
+      `Best Ratio: ${(stat.max/this.quest.minActions).toFixed(3)}`,
       `Avg ratio: ${(avg).toFixed(3)}`,
-      `Worst ratio: ${(this.quest.maxActions/stat.min).toFixed(3)}`,
+      `Worst ratio: ${(stat.min/this.quest.maxActions).toFixed(3)}`,
       ''
     ];
     let htmlInfo = '';
@@ -307,6 +322,7 @@ class Script {
   }
 
   async insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
+    /* Returns info row because I suck at structure */
     //First, determine if quest is active
     if(isActiveQuest && tableBody.children[0]) {
       //If it is, parse the text directly
@@ -316,11 +332,22 @@ class Script {
       if(objectiveElemText[3].toLowerCase() === "actions" || objectiveElemText[3].toLowerCase() === "survived") {
         const actionsDone = parseInt(objectiveElemText[0]);
         const objective = parseInt(objectiveElemText[2]);
-        timeElem = this.getTimeElem(objective - actionsDone, row.firstChild.className, isVillage);
+        //Special case: Party action quest (because it has 7 sec timer)
+        if(row.children[2].innerText.split(" ")[1].toLowerCase() === "party") {
+          const convertedActions = (objective - actionsDone) * 7 / 6;
+          timeElem = this.getTimeElem(convertedActions, row.firstChild.className, isVillage);
+          row.appendChild(timeElem);
+          return await this.getQuestInfoElem(convertedActions);
+        } else {
+          timeElem = this.getTimeElem(objective - actionsDone, row.firstChild.className, isVillage);
+          row.appendChild(timeElem);
+          return await this.getQuestInfoElem(objective - actionsDone);
+        }
       } else {
         timeElem = this.getTimeElem(-1, row.firstChild.className, isVillage);
+        row.appendChild(timeElem);
+        return await this.getQuestInfoElem(-1);
       }
-      row.appendChild(timeElem);
     } else if(isVillage && tableBody.children[0]) {
       //Get village quests
       for(let i = 0; i < tableBody.children.length; i++) {
@@ -329,6 +356,12 @@ class Script {
         const objectiveText = row.children[1].innerText.split(" ");
         let timeElem = null;
         if(objectiveText[1] === "actions") {
+          //Check for str point reward
+          const reward = row.children[2].innerText.split(" ")[1];
+          if(reward === "strength") {
+            row.children[2].style.border = "inset";
+          }
+          //Insert end time
           const objective = parseInt(objectiveText[0]);
           timeElem = this.getTimeElem(objective, row.firstChild.className, true);
         } else {
@@ -336,6 +369,7 @@ class Script {
         }
         row.appendChild(timeElem);
       }
+      return;
     } else if(tableBody.children[0]) { //personal not active quests
       //Get list of quests available
       let gameData = await this.getGameData();
@@ -351,12 +385,20 @@ class Script {
       for(let i = 0; i < availableQuests.length; i++) {
         const row = tableBody.children[i];
         if(availableQuests[i].type === "swordsman" || availableQuests[i].type === "tax" || 
-          availableQuests[i].type === "treasure" || availableQuests[i].type === "gems" || 
-          availableQuests[i].type === "spell") { //The quests that require actions to be done
-
+          availableQuests[i].type === "gems" || availableQuests[i].type === "spell") { 
+          //Above are the quests that require actions to be done
           const actionsNeeded = parseInt(availableQuests[i].objective.split(" ")[0].replace(/,/g, ""));
           const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
-          row.appendChild(timeElem);
+          row.appendChild(timeElem); //Insert end time
+        } else if(availableQuests[i].type === "treasure") {
+          //Add a gold ratio
+          const actionsNeeded = parseInt(availableQuests[i].objective.split(" ")[0].replace(/,/g, ""));
+          const reward = parseInt(availableQuests[i].reward.split(" ")[0].replace(/,/g, ""));
+          const ratio = Math.round(reward / actionsNeeded * 600).toLocaleString();
+          const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
+          row.appendChild(timeElem); //Insert end time
+          //Insert ratio
+          row.children[1].innerText = `${row.children[1].innerText} (${ratio} gold/hr)`
         } else if(availableQuests[i].type === "slow") {
           //Convert 7 second actions to 6 second actions
           const actionsNeeded = parseInt(availableQuests[i].objective.split(" ")[0].replace(/,/g, ""));
@@ -368,6 +410,7 @@ class Script {
           row.appendChild(timeElem);
         }
       }
+      return this.getQuestRatioInfo(); //The bottom row that contains extra info
     }
   }
 }
