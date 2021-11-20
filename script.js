@@ -1,12 +1,10 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.2
+// @version      1.3
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
-// @match        */queslar.com*
-// @match        *www.queslar.com*
-// @match        *queslar.com/*
+// @include      *queslar.com*
 // @grant        none
 // ==/UserScript==
 
@@ -73,7 +71,7 @@ class Script {
       await new Promise(resolve => setTimeout(resolve, 500));
       gameData = await this.getGameData();
     }
-    this.quest.numRefreshes = gameData.playerQuestService.refreshesBought + 5;
+    this.quest.numRefreshes = gameData.playerQuestService.refreshesBought + 20;
     this.quest.refreshesUsed = gameData.playerQuestService.refreshesUsed;
   }
 
@@ -97,6 +95,12 @@ class Script {
 
   async initPathDetection() {
     let gameData = await this.getGameData();
+    let router = gameData?.router
+    //Wait for service to load
+    while(router === undefined && router?.events === undefined) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      router = gameData.router
+    }
     gameData.router.events.subscribe(event => {
       if(event.navigationTrigger) this.handlePathChange(event.url);
     });
@@ -120,7 +124,6 @@ class Script {
       this.personalQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
-      await this.handlePersonalQuest({target: target});
 
     } else if(path[path.length - 1].toLowerCase() === 'quests' && path[0].toLowerCase() === 'village') {
       let target = document.querySelector('app-village');
@@ -132,7 +135,6 @@ class Script {
       this.villageQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
-      await this.handleVillageQuest({target: target});
     }
   }
 
@@ -143,43 +145,41 @@ class Script {
       mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
       mutation?.addedNodes?.[0]?.nodeName === 'TD' ||
       mutation?.addedNodes?.[0]?.nodeName === '#text' ||
-      mutation?.addedNodes?.[0]?.className === 'mat-ripple-element') {
+      mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
+      mutation?.addedNodes?.[0]?.id === "questInfoRow") {
       return;
     }
     const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
 
     if(questTable) {
-      let rowIndex = 0;
       let infoRow = null;
-      let objective = 0;
 
       //Add end time column to table
-      this.addEndTimeColumn(questTable, false);
+      this.addEndTimeColumn(questTable);
 
       const tableBody = questTable.children[1];
 
       //There are two states: active quest and no quest
       if(tableBody.children.length > 2) {//No quest
-        rowIndex = 2;
-        infoRow = this.getRatioElem();
-        const objectiveElem = tableBody.children[2].children[1];
-        objective = parseInt(objectiveElem.innerText.split(" ")[0].replace(/,/g, ""));
+        infoRow = this.getQuestRatioInfo(); //The bottom row that contains extra info
+        await this.insertEndTimeElem(tableBody, false, false);
+
       } else if(tableBody.children.length > 0) { //Active quest
         //Update number of refreshes used, just in case
         await this.updateRefreshes();
-
-        const objectiveElem = tableBody.children[0].children[1];
-        const actionsDone = parseInt(objectiveElem.innerText.split(" ")[0]);
-        objective = parseInt(objectiveElem.innerText.split(" ")[2]);
-        infoRow = this.getQuestInfoElem(objective - actionsDone);
+        await this.insertEndTimeElem(tableBody, false, true);
+        //TODO: Duplicate code, consider placing elsewhere
+        const objectiveElemText = tableBody.children[0].children[1].innerText.split(" ");
+        if(objectiveElemText[3].toLowerCase() === 'actions' || objectiveElemText[3].toLowerCase() === 'survived') {
+          const actionsDone = parseInt(objectiveElemText[0]);
+          const objective = parseInt(objectiveElemText[2]);
+          infoRow = this.getQuestInfoElem(objective - actionsDone);
+        } else {
+          infoRow = this.getQuestInfoElem(-1);
+        }
       } else {
         return;
       }
-      const statRewardElem = tableBody.children[rowIndex].children[2];
-
-      //Might as well parse these instead of using the heavy questService
-      const statReward = parseInt(statRewardElem.innerText.split(" ")[0].replace(/,/g, ""));
-      statRewardElem.innerText = `${statRewardElem.innerText} (${(objective/statReward).toFixed(3)})`;
 
       //Add an extra row for extra quest info if there isn't one already
       if(!document.getElementById('questInfoRow')) tableBody.appendChild(infoRow);
@@ -192,17 +192,28 @@ class Script {
       mutation?.addedNodes?.[0]?.nodeName === '#text' ||
       mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
       mutation?.addedNodes?.[0]?.nodeName === 'TD' ||
-      mutation?.addedNodes?.[0]?.className === 'mat-ripple-element') {
+      mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
+      mutation?.addedNodes?.[0]?.id === "questInfoRow") {
       return;
     }
     const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
 
     if(questTable) {
       await this.updateVillageRefreshes(); //Update for refreshes used
-      this.addEndTimeColumn(questTable, true);
-      
+      this.addEndTimeColumn(questTable);
+
+      //Add end time
+      const tableBody = questTable.children[1];
+
+      //Add end time elems to the end time column
+      if(tableBody.children.length > 2) { //Quest is not active
+        await this.insertEndTimeElem(tableBody, true, false);
+      } else {
+        await this.insertEndTimeElem(tableBody, true, true);
+      }
+
       //Add info text at the bottom of quest table
-      const infoRow = document.createTextNode('End time is calculated assuming all members are active. The time is approximate and may not be accurate.' 
+      const infoRow = document.createTextNode('End time is calculated assuming all members are active. The time is approximate and may not be accurate.'
         + `${this.quest.villageRefreshesUsed}/${this.quest.villageNumRefreshes} refreshes used.`);
       infoRow.id = 'questExplanation';
       if(questTable.parentElement.lastChild.id !== 'questExplanation') {
@@ -233,7 +244,7 @@ class Script {
     //actionsNeeded * 6000 = actions * 6 sec per action * 1000 milliseconds
     const finishPartyTime = new Date(date.getTime() + (actionsNeeded + 1440) * 6000).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
     const info = ['',`${this.quest.refreshesUsed}/${this.quest.numRefreshes} refreshes used`, '',
-      `End time (local time) with 1440 party actions: ${finishPartyTime}`];
+      actionsNeeded >= 0 ? `End time (local time) with 1440 party actions: ${finishPartyTime}`: ''];
     let htmlInfo = '';
     for (let text of info) {
       htmlInfo += `<td>${text}</td>`
@@ -259,7 +270,7 @@ class Script {
     return cell;
   }
 
-  getRatioElem() {
+  getQuestRatioInfo() {
     let row = document.createElement('tr');
     const stat = this.getStatReward();
     const avg = (this.quest.minActions/stat.max + this.quest.maxActions/stat.min) / 2;
@@ -279,39 +290,83 @@ class Script {
     return row;
   }
 
-  addEndTimeColumn(tableElem, isVillage=true) {
+  addEndTimeColumn(tableElem) {
     //Given a table element, add a new column for end time and add times to each row
     if(tableElem === undefined) return;
 
     //Add header title for the column
-    if(tableElem.firstChild.firstChild.children?.[4]?.id !== 'endTimeHeader') {
+    if(tableElem?.firstChild?.firstChild?.nodeType !== 8 &&
+      (tableElem.firstChild.firstChild.children?.[3]?.id !== 'endTimeHeader' //Inactive vs active quest
+      && tableElem.firstChild.firstChild.children?.[4]?.id !== 'endTimeHeader')) {
       const header = document.createElement('th');
       header.innerText = 'End Time (local time)';
       header.id = 'endTimeHeader';
-      header.setAttribute('class', tableElem?.firstChild?.firstChild?.firstChild.className ?? 'mat-header-cell cdk-header-cell cdk-column-current mat-column-current ng-star-inserted');
+      header.setAttribute('class', tableElem.firstChild.firstChild?.firstChild?.className ?? 'mat-header-cell cdk-header-cell cdk-column-current mat-column-current ng-star-inserted');
       tableElem.firstChild.firstChild.appendChild(header);
     }
+  }
 
-    //Add an end time to every row
-    const body = tableElem.children[1];
-    for(let i = 0; i < body.children.length; i++) {
-      const row = body.children[i];
-      const objective = row.children[1].innerText.split(" ");
-      //End time is only applicable to certain quests
-      if(objective[objective.length - 1].toLowerCase() === 'actions' || objective[objective.length - 1].toLowerCase() === 'battles') {
-        let actionsLeft = 0;
-        if(body.children.length > 2) { //No active quest
-          actionsLeft = parseInt(objective[0].replace(/,/g, ""));
-        } else if(body.children.length > 0) { //Active quest
-          const actionsDone = parseInt(objective[0].replace(/,/g, ""));
-          const requirement = parseInt(objective[2].replace(/,/g, ""));
-          actionsLeft = requirement - actionsDone;
+  async insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
+    //First, determine if quest is active
+    if(isActiveQuest && tableBody.children[0]) {
+      //If it is, parse the text directly
+      const row = tableBody.children[0];
+      const objectiveElemText = row?.children[1].innerText.split(" ");
+      let timeElem;
+      if(objectiveElemText[3].toLowerCase() === "actions" || objectiveElemText[3].toLowerCase() === "survived") {
+        const actionsDone = parseInt(objectiveElemText[0]);
+        const objective = parseInt(objectiveElemText[2]);
+        timeElem = this.getTimeElem(objective - actionsDone, row.firstChild.className, isVillage);
+      } else {
+        timeElem = this.getTimeElem(-1, row.firstChild.className, isVillage);
+      }
+      row.appendChild(timeElem);
+    } else if(isVillage && tableBody.children[0]) {
+      //Get village quests
+      for(let i = 0; i < tableBody.children.length; i++) {
+        let row = tableBody.children[i];
+        
+        const objectiveText = row.children[1].innerText.split(" ");
+        let timeElem = null;
+        if(objectiveText[1] === "actions") {
+          const objective = parseInt(objectiveText[0]);
+          timeElem = this.getTimeElem(objective, row.firstChild.className, true);
+        } else {
+          timeElem = this.getTimeElem(-1, row.firstChild.className, true);
         }
-        const timeElem = this.getTimeElem(actionsLeft, row.firstChild.className, isVillage);
         row.appendChild(timeElem);
-      } else if(row.id !== 'questInfoRow') {
-        const timeElem = this.getTimeElem(-1, row.firstChild.className, isVillage);
-        row.appendChild(timeElem);
+      }
+    } else if(tableBody.children[0]) { //personal not active quests
+      //Get list of quests available
+      let gameData = await this.getGameData();
+
+      while(gameData?.playerQuestService?.questList === undefined) { //Wait for service to load
+        await new Promise(resolve => setTimeout(resolve, 200));
+        gameData = await this.getGameData();
+      }
+
+      const availableQuests = gameData.playerQuestService.questArray;
+
+      //Go through each quest and update row accordingly
+      for(let i = 0; i < availableQuests.length; i++) {
+        const row = tableBody.children[i];
+        if(availableQuests[i].type === "swordsman" || availableQuests[i].type === "tax" || 
+          availableQuests[i].type === "treasure" || availableQuests[i].type === "gems" || 
+          availableQuests[i].type === "spell") { //The quests that require actions to be done
+
+          const actionsNeeded = parseInt(availableQuests[i].objective.split(" ")[0].replace(/,/g, ""));
+          const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
+          row.appendChild(timeElem);
+        } else if(availableQuests[i].type === "slow") {
+          //Convert 7 second actions to 6 second actions
+          const actionsNeeded = parseInt(availableQuests[i].objective.split(" ")[0].replace(/,/g, ""));
+          const convertedActions = actionsNeeded * 7 / 6;
+          const timeElem = this.getTimeElem(convertedActions, row.firstChild.className, false);
+          row.appendChild(timeElem);
+        } else if(row.id !== 'questInfoRow'){ //Time not able to be calculated
+          const timeElem = this.getTimeElem(-1, row.firstChild.className, false);
+          row.appendChild(timeElem);
+        }
       }
     }
   }
