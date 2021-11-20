@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.3
+// @version      1.3.0
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -289,10 +289,10 @@ class Script {
     let row = document.createElement('tr');
     const stat = this.getStatReward();
     const avg = (stat.max/this.quest.minActions + stat.min/this.quest.maxActions) / 2;
-    const info = ['Overall possible ratios, considering quests completed & village bold:',
-      `Best Ratio: ${(stat.max/this.quest.minActions).toFixed(3)}`,
-      `Avg ratio: ${(avg).toFixed(3)}`,
-      `Worst ratio: ${(stat.min/this.quest.maxActions).toFixed(3)}`,
+    const info = ['Possible stat ratios, considering quests completed & village bold:',
+    `Worst ratio: ${(stat.min/this.quest.maxActions).toFixed(3)}`,
+    `Avg ratio: ${(avg).toFixed(3)}`,
+    `Best Ratio: ${(stat.max/this.quest.minActions).toFixed(3)}`,
       ''
     ];
     let htmlInfo = '';
