@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.3.0
+// @version      1.3.1
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -48,7 +48,7 @@ class Script {
         this.quest.questsCompleted = val.playerMiscData.quests_completed;
         this.playerId = val.playerMiscData.player_id;
       },
-      response => console.log('QBS: POST request failure', response)
+      response => console.log('QuesBS: POST request failure', response)
     );
 
     await this.updateRefreshes();
@@ -119,6 +119,9 @@ class Script {
     gameData.router.events.subscribe(event => {
       if(event.navigationTrigger) this.handlePathChange(event.url);
     });
+
+    //Send a popup as feedback
+    gameData.snackbarService.openSnackbar("QuesBS has been loaded.");
   }
 
 
@@ -139,6 +142,7 @@ class Script {
       this.personalQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
+      await this.handlePersonalQuest({target: target});
 
     } else if(path[path.length - 1].toLowerCase() === 'quests' && path[0].toLowerCase() === 'village') {
       let target = document.querySelector('app-village');
@@ -150,6 +154,7 @@ class Script {
       this.villageQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
+      await this.handleVillageQuest({target: target});
     }
   }
 
@@ -417,29 +422,29 @@ class Script {
 
 
 // This is where the script starts
-var QBS = null;
-console.log('QBS: Init load');
-let QBSLoader = null;
+var QuesBS = null;
+console.log('QuesBS: Init load');
+let QuesBSLoader = null;
 let numAttempts = 30;
 
 window.addEventListener('load', () => { //Load the page first before setting up the script
-  QBSLoader = setInterval(setupScript, 3000);
+  QuesBSLoader = setInterval(setupScript, 3000);
 });
 
 async function setupScript() {
-  if(document.getElementById('profile-next-level') && QBS === null) {
-    QBS = new Script();
-    console.log('QBS: The script has been loaded.');
+  if(document.getElementById('profile-next-level') && QuesBS === null) {
+    QuesBS = new Script();
+    console.log('QuesBS: The script has been loaded.');
 
-    clearInterval(QBSLoader);
-    await QBS.initPathDetection();
-    await QBS.updateQuestData();
+    clearInterval(QuesBSLoader);
+    await QuesBS.initPathDetection();
+    await QuesBS.updateQuestData();
   } else {
-    console.log('QBS: Loading failed. Trying again...');
+    console.log('QuesBS: Loading failed. Trying again...');
     numAttempts--;
     if(numAttempts <= 0) {
-      clearInterval(QBSLoader); //Stop trying after a while
-      console.log('QBS: Loading failed. Stopping...');
+      clearInterval(QuesBSLoader); //Stop trying after a while
+      console.log('QuesBS: Loading failed. Stopping...');
     }
   }
 }
