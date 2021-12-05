@@ -24,6 +24,7 @@ class Script {
       maxActions: 580,
     };
     this.playerId;
+    this.gameData;
 
     //observer setup
     this.initObservers();
@@ -31,19 +32,22 @@ class Script {
   }
 
   async getGameData() { //ULTIMATE POWER
-    //Get an update of the game's state
-    let rootElement = getAllAngularRootElements()[0].children[1]["__ngContext__"][30];
-    while(rootElement === undefined) { //Power comes with a price; wait for it to load
+    //Get a reference to *all* the data the game is using to run
+    this.gameData = getAllAngularRootElements()[0].children[1]["__ngContext__"][30]?.playerGeneralService;
+    while(this.gameData === undefined) { //Power comes with a price; wait for it to load
       await new Promise(resolve => setTimeout(resolve, 500))
-      rootElement = getAllAngularRootElements()[0].children[1]["__ngContext__"][30];
+      this.gameData = getAllAngularRootElements()[0].children[1]["__ngContext__"][30]?.playerGeneralService;
     }
-    return rootElement.playerGeneralService;
   }
 
   async updateQuestData() {
-    let gameData = await this.getGameData();
-    //Couldn't find an easier method than doing a POST request
-    gameData.httpClient.post('/player/load/misc', {}).subscribe(
+    while(this.gameData === undefined) {
+      await this.getGameData();
+      //wait until gameData loads, it is important
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    //Couldn't find an easier method to get quest completions than a POST request
+    this.gameData.httpClient.post('/player/load/misc', {}).subscribe(
       val => {
         this.quest.questsCompleted = val.playerMiscData.quests_completed;
         this.playerId = val.playerMiscData.player_id;
@@ -52,12 +56,12 @@ class Script {
     );
 
     await this.updateRefreshes();
-    if(gameData.playerVillageService?.isInVillage === true) {
-      let villageService = gameData.playerVillageService;
+    if(this.gameData.playerVillageService?.isInVillage === true) {
+      let villageService = this.gameData.playerVillageService;
       //Wait for service to load
       while(villageService === undefined) {
         await new Promise(resolve => setTimeout(resolve, 200));
-        villageService = gameData.playerVillageService;
+        villageService = this.gameData.playerVillageService;
       }
       this.quest.villageBold = villageService.strengths.bold.amount;
       this.quest.villageSize = villageService.general.members.length;
@@ -65,39 +69,39 @@ class Script {
       this.quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
     }
     //Can't be bothered to calculate it accurately using all 4 stats
-    this.quest.baseStat = Math.min(15, gameData.playerStatsService?.strength * 0.0025);
+    this.quest.baseStat = Math.min(15, this.gameData.playerStatsService?.strength * 0.0025);
   }
 
   async getPartyActions() {
-    let gameData = await this.getGameData();
-    //Wait for service to load
-    while(gameData?.partyService?.partyOverview?.partyInformation === undefined) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      gameData = await this.getGameData();
+    //A function to wait for party service to load
+    //And also to abstract the horribly long method
+    while(this.gameData?.partyService?.partyOverview?.partyInformation === undefined) {
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
 
-    return gameData.partyService.partyOverview.partyInformation[this.playerId].actions.daily_actions_remaining;
+    return this.gameData.partyService.partyOverview.partyInformation[this.playerId].actions.daily_actions_remaining;
   }
 
   async updateRefreshes() {
-    let gameData = await this.getGameData();
-    //Wait for service to load
-    while(gameData?.playerQuestService?.refreshesUsed === undefined) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      gameData = await this.getGameData();
+    //Only made a load waiter because script was having issues with not loading
+    while(this.gameData?.playerQuestService?.refreshesUsed === undefined) {
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
-    this.quest.numRefreshes = gameData.playerQuestService.refreshesBought + 20;
-    this.quest.refreshesUsed = gameData.playerQuestService.refreshesUsed;
+    this.quest.numRefreshes = this.gameData.playerQuestService.refreshesBought + 20;
+    this.quest.refreshesUsed = this.gameData.playerQuestService.refreshesUsed;
   }
 
   async updateVillageRefreshes() {
-    let gameData = await this.getGameData();
-    let villageService = gameData.playerVillageService;
+    let villageService = this.gameData.playerVillageService;
     this.quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
     this.quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
   }
 
   initObservers() {
+    /**
+     * Initialize observers which will be used to detect changes on
+     * each specific page when it updates.
+     */
     let scriptObject = this; //mutation can't keep track of this
     this.personalQuestObserver = new MutationObserver(mutationsList => {
       scriptObject.handlePersonalQuest(mutationsList[0]);
@@ -109,23 +113,31 @@ class Script {
 
 
   async initPathDetection() {
-    let gameData = await this.getGameData();
-    let router = gameData?.router
+    /**
+     * Initializes the event trigger that will watch for changes in the
+     * url path. This will allow us to determine which part of the
+     * script to activate on each specific page.
+     */
+    let router = this.gameData?.router
     //Wait for service to load
     while(router === undefined && router?.events === undefined) {
       await new Promise(resolve => setTimeout(resolve, 200));
-      router = gameData.router
+      router = this.gameData.router
     }
-    gameData.router.events.subscribe(event => {
+    this.gameData.router.events.subscribe(event => {
       if(event.navigationTrigger) this.handlePathChange(event.url);
     });
 
-    //Send a popup as feedback
-    gameData.snackbarService.openSnackbar("QuesBS has been loaded.");
+    //Send a popup to player as feedback
+    this.gameData.snackbarService.openSnackbar("QuesBS has been loaded.");
   }
 
 
   async handlePathChange(url) {
+    /**
+     * Detects which page the player navigated to when the url path
+     * has changed, then activates the observer for the page. 
+     */
     const path = url.split("/").slice(2);
     if(path.join() !== this.currentPath) {
       this.stopObserver(this.currentPath);
@@ -133,6 +145,7 @@ class Script {
     this.currentPath = path.join();
     //Activate observer if on a specific page
     if(path[path.length - 1].toLowerCase() === 'quests' && path[0].toLowerCase() === 'actions') {
+      //Observe personal quest page for updates
       let target = document.querySelector('app-actions');
       //Sometimes the script attempts to search for element before it loads in
       while(!target) {
@@ -142,9 +155,11 @@ class Script {
       this.personalQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
+      //Sometimes there is no change observed for the initial page load, so call function
       await this.handlePersonalQuest({target: target});
 
     } else if(path[path.length - 1].toLowerCase() === 'quests' && path[0].toLowerCase() === 'village') {
+      //Observe village quest page for updates
       let target = document.querySelector('app-village');
       //Sometimes the script attempts to search for element before it loads in
       while(!target) {
@@ -154,12 +169,18 @@ class Script {
       this.villageQuestObserver.observe(target, {
         childList: true, subtree: true, attributes: false,
       });
+      //Sometimes there is no change observed for the initial page load, so call function
       await this.handleVillageQuest({target: target});
     }
   }
 
   async handlePersonalQuest(mutation) {
-    //Filter out any unneeded mutations
+    /**
+     * Handles a new update to the personal quests page. It loads in all
+     * the extra quest information, which differs depending on an active or
+     * non-active quest page view.
+     */
+    //Filter out any unneeded mutations/updates to the page
     if(mutation?.addedNodes?.length < 1 ||
       mutation?.addedNodes?.[0]?.localName === 'mat-tooltip-component' ||
       mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
@@ -169,6 +190,7 @@ class Script {
       mutation?.addedNodes?.[0]?.id === "questInfoRow") {
       return;
     }
+    //Modify the table used to hold quest information
     const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
 
     if(questTable) {
@@ -181,6 +203,7 @@ class Script {
 
       //There are two states: active quest and no quest
       if(tableBody.children.length > 2) {//No quest
+        //Get the info row that goes at the bottom
         infoRow = await this.insertEndTimeElem(tableBody, false, false);
 
       } else if(tableBody.children.length > 0) { //Active quest
@@ -207,6 +230,12 @@ class Script {
 
 
   async handleVillageQuest(mutation) {
+    /**
+     * Handles a new update to the village quests page. It loads in all
+     * the extra quest information, which differs depending on an active or
+     * non-active quest page view.
+     */
+    //Filter out unneeded mutations/updates to page
     if(mutation?.addedNodes?.length < 1 ||
       mutation?.addedNodes?.[0]?.nodeName === '#text' ||
       mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
@@ -227,7 +256,7 @@ class Script {
       //Add end time elems to the end time column
       if(tableBody.children.length > 2) { //Quest is not active
         await this.insertEndTimeElem(tableBody, true, false);
-      } else {
+      } else { //Quest is active
         await this.insertEndTimeElem(tableBody, true, true);
       }
 
@@ -250,6 +279,9 @@ class Script {
   }
 
   getStatReward() {
+    /**
+     * Returns the possible max and min values for stat quests
+     */
     return {
       max: Math.round((this.quest.questsCompleted/300+this.quest.baseStat+22.75)*(1+this.quest.villageBold*2/100)*1.09),
       min: Math.round((this.quest.questsCompleted/300+this.quest.baseStat+8.5)*(1+this.quest.villageBold*2/100)*1.09),
@@ -257,6 +289,9 @@ class Script {
   }
 
   async getQuestInfoElem(actionsNeeded) {
+    /**
+     * Returns the info row used for active personal quest page
+     */
     const partyActions = await this.getPartyActions();
     let row = document.createElement('tr');
 
@@ -275,6 +310,12 @@ class Script {
   }
 
   getTimeElem(actionsNeeded, className, isVillage=true) {
+    /**
+     * Returns an element used to describe the end time for each quest, used for
+     * the end time column. It has styled CSS through the className, and the
+     * time calculation differs for village vs personal. If there are an 
+     * invalid number of actionsNeeded, the time is N/A.
+     */
     const cell = document.createElement('td');
 
     if(actionsNeeded > 0) {
@@ -291,6 +332,7 @@ class Script {
   }
 
   getQuestRatioInfo() {
+    //Return info row used for inactive personal quests
     let row = document.createElement('tr');
     const stat = this.getStatReward();
     const avg = (stat.max/this.quest.minActions + stat.min/this.quest.maxActions) / 2;
@@ -327,7 +369,9 @@ class Script {
   }
 
   async insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
-    /* Returns info row because I suck at structure */
+    /* Returns info row because I suck at structure 
+    ** Also inserts the end time for each quest 
+    */
     //First, determine if quest is active
     if(isActiveQuest && tableBody.children[0]) {
       //If it is, parse the text directly
@@ -426,11 +470,13 @@ var QuesBS = null;
 console.log('QuesBS: Init load');
 let QuesBSLoader = null;
 let numAttempts = 30;
+QuesBSLoader = setInterval(setupScript, 3000);
 
+/*
 window.addEventListener('load', () => { //Load the page first before setting up the script
   QuesBSLoader = setInterval(setupScript, 3000);
 });
-
+*/
 window.startQuesBS = () => { // If script doesn't start, call this function (ie. startQuesBS() in the console)
   QuesBSLoader = setInterval(setupScript, 3000);
 }
