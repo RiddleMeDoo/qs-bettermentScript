@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.3.1
+// @version      1.3.2
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -431,6 +431,10 @@ window.addEventListener('load', () => { //Load the page first before setting up 
   QuesBSLoader = setInterval(setupScript, 3000);
 });
 
+window.startQuesBS = () => { // If script doesn't start, call this function (ie. startQuesBS() in the console)
+  QuesBSLoader = setInterval(setupScript, 3000);
+}
+
 async function setupScript() {
   if(document.getElementById('profile-next-level') && QuesBS === null) {
     QuesBS = new Script();
@@ -439,6 +443,9 @@ async function setupScript() {
     clearInterval(QuesBSLoader);
     await QuesBS.initPathDetection();
     await QuesBS.updateQuestData();
+  } else if(QuesBS) {
+    console.log('QuesBS: The script has already been loaded.');
+    clearInterval(QuesBSLoader);
   } else {
     console.log('QuesBS: Loading failed. Trying again...');
     numAttempts--;
