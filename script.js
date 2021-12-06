@@ -28,15 +28,15 @@ class Script {
 
     //observer setup
     this.initObservers();
-    this.currentPath = window.location.hash.split("/").splice(2).join();
+    this.currentPath = window.location.hash.split('/').splice(2).join();
   }
 
   async getGameData() { //ULTIMATE POWER
     //Get a reference to *all* the data the game is using to run
-    this.gameData = getAllAngularRootElements()[0].children[1]["__ngContext__"][30]?.playerGeneralService;
+    this.gameData = getAllAngularRootElements()[0].children[1]['__ngContext__'][30]?.playerGeneralService;
     while(this.gameData === undefined) { //Power comes with a price; wait for it to load
       await new Promise(resolve => setTimeout(resolve, 500))
-      this.gameData = getAllAngularRootElements()[0].children[1]["__ngContext__"][30]?.playerGeneralService;
+      this.gameData = getAllAngularRootElements()[0].children[1]['__ngContext__'][30]?.playerGeneralService;
     }
   }
 
@@ -118,6 +118,11 @@ class Script {
      * url path. This will allow us to determine which part of the
      * script to activate on each specific page.
      */
+     while(this.gameData === undefined) {
+      await this.getGameData();
+      //wait until gameData loads, it is important
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
     let router = this.gameData?.router
     //Wait for service to load
     while(router === undefined && router?.events === undefined) {
@@ -129,7 +134,7 @@ class Script {
     });
 
     //Send a popup to player as feedback
-    this.gameData.snackbarService.openSnackbar("QuesBS has been loaded.");
+    this.gameData.snackbarService.openSnackbar('QuesBS has been loaded.');
   }
 
 
@@ -138,7 +143,7 @@ class Script {
      * Detects which page the player navigated to when the url path
      * has changed, then activates the observer for the page. 
      */
-    const path = url.split("/").slice(2);
+    const path = url.split('/').slice(2);
     if(path.join() !== this.currentPath) {
       this.stopObserver(this.currentPath);
     }
@@ -187,7 +192,7 @@ class Script {
       mutation?.addedNodes?.[0]?.nodeName === 'TD' ||
       mutation?.addedNodes?.[0]?.nodeName === '#text' ||
       mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
-      mutation?.addedNodes?.[0]?.id === "questInfoRow") {
+      mutation?.addedNodes?.[0]?.id === 'questInfoRow') {
       return;
     }
     //Modify the table used to hold quest information
@@ -212,10 +217,10 @@ class Script {
         infoRow = await this.insertEndTimeElem(tableBody, false, true);
         //Special case: Gold reward quest
         const rewardText = tableBody.children[0].children[2].innerText;
-        const reward = rewardText.split(" ");
-        if(reward[1].toLowerCase() === "gold") {
+        const reward = rewardText.split(' ');
+        if(reward[1].toLowerCase() === 'gold') {
           //Add a gold ratio
-          const actionsNeeded = parseInt(tableBody.children[0].children[1].innerText.split(" ")[2]);
+          const actionsNeeded = parseInt(tableBody.children[0].children[1].innerText.split(' ')[2]);
           const ratio = Math.round(parseInt(reward[0]) / actionsNeeded * 600).toLocaleString();
           tableBody.children[0].children[2].innerText = `${rewardText} (${ratio} gold/hr)`;
         }
@@ -241,7 +246,7 @@ class Script {
       mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
       mutation?.addedNodes?.[0]?.nodeName === 'TD' ||
       mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
-      mutation?.addedNodes?.[0]?.id === "questInfoRow") {
+      mutation?.addedNodes?.[0]?.id === 'questInfoRow') {
       return;
     }
     const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
@@ -374,15 +379,16 @@ class Script {
     */
     //First, determine if quest is active
     if(isActiveQuest && tableBody.children[0]) {
-      //If it is, parse the text directly
+      //If it is, parse the text directly to get the end time
       const row = tableBody.children[0];
-      const objectiveElemText = row?.children[1].innerText.split(" ");
+      const objectiveElemText = row?.children[1].innerText.split(' ');
       let timeElem;
-      if(objectiveElemText[3].toLowerCase() === "actions" || objectiveElemText[3].toLowerCase() === "survived") {
+      if(objectiveElemText[3].toLowerCase() === 'actions' || objectiveElemText[3].toLowerCase() === 'survived') {
         const actionsDone = parseInt(objectiveElemText[0]);
         const objective = parseInt(objectiveElemText[2]);
+
         //Special case: Party action quest (because it has 7 sec timer)
-        if(row.children[2].innerText.split(" ")[1].toLowerCase() === "party") {
+        if(row.children[2].innerText.split(' ')[1].toLowerCase() === 'party') {
           const convertedActions = (objective - actionsDone) * 7 / 6;
           timeElem = this.getTimeElem(convertedActions, row.firstChild.className, isVillage);
           row.appendChild(timeElem);
@@ -392,23 +398,36 @@ class Script {
           row.appendChild(timeElem);
           return await this.getQuestInfoElem(objective - actionsDone);
         }
+        
+      } else if(objectiveElemText[3].toLowerCase() === 'base') { //Special case: Exp reward quest
+        const goldCollected = parseInt(objectiveElemText[0]);
+        const objective = parseInt(objectiveElemText[2]);
+        const currentMonster = this.gameData.playerActionService.selectedMonster;
+        const baseGoldPerAction = 8 + 2 * currentMonster;
+        const actionsNeeded = Math.ceil((objective - goldCollected) / baseGoldPerAction);
+        timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, isVillage);
+        row.appendChild(timeElem);
+        return await this.getQuestInfoElem(actionsNeeded);
+
       } else {
         timeElem = this.getTimeElem(-1, row.firstChild.className, isVillage);
         row.appendChild(timeElem);
         return await this.getQuestInfoElem(-1);
       }
+
+
     } else if(isVillage && tableBody.children[0]) {
       //Get village quests
       for(let i = 0; i < tableBody.children.length; i++) {
         let row = tableBody.children[i];
         
-        const objectiveText = row.children[1].innerText.split(" ");
+        const objectiveText = row.children[1].innerText.split(' ');
         let timeElem = null;
-        if(objectiveText[1] === "actions") {
+        if(objectiveText[1] === 'actions') {
           //Check for str point reward
-          const reward = row.children[2].innerText.split(" ")[1];
-          if(reward === "strength") {
-            row.children[2].style.border = "inset";
+          const reward = row.children[2].innerText.split(' ')[1];
+          if(reward === 'strength') {
+            row.children[2].style.border = 'inset';
           }
           //Insert end time
           const objective = parseInt(objectiveText[0]);
@@ -419,41 +438,45 @@ class Script {
         row.appendChild(timeElem);
       }
       return;
+
+
     } else if(tableBody.children[0]) { //personal not active quests
-      //Get list of quests available
-      let gameData = await this.getGameData();
-
-      while(gameData?.playerQuestService?.questList === undefined) { //Wait for service to load
-        await new Promise(resolve => setTimeout(resolve, 200));
-        gameData = await this.getGameData();
-      }
-
-      const availableQuests = gameData.playerQuestService.questArray;
+      const availableQuests = this.gameData.playerQuestService.questArray;
 
       //Go through each quest and update row accordingly
       for(let i = 0; i < availableQuests.length; i++) {
         const row = tableBody.children[i];
-        if(availableQuests[i].type === "swordsman" || availableQuests[i].type === "tax" || 
-          availableQuests[i].type === "gems" || availableQuests[i].type === "spell") { 
+        if(availableQuests[i].type === 'swordsman' || availableQuests[i].type === 'tax' || 
+          availableQuests[i].type === 'gems' || availableQuests[i].type === 'spell') { 
           //Above are the quests that require actions to be done
-          const actionsNeeded = parseInt(availableQuests[i].objective.split(" ")[0].replace(/,/g, ""));
+          const actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
           const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
           row.appendChild(timeElem); //Insert end time
-        } else if(availableQuests[i].type === "treasure") {
+
+        } else if(availableQuests[i].type === 'treasure') {
           //Add a gold ratio
-          const actionsNeeded = parseInt(availableQuests[i].objective.split(" ")[0].replace(/,/g, ""));
-          const reward = parseInt(availableQuests[i].reward.split(" ")[0].replace(/,/g, ""));
+          const actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
+          const reward = parseInt(availableQuests[i].reward.split(' ')[0].replace(/,/g, ''));
           const ratio = Math.round(reward / actionsNeeded * 600).toLocaleString();
           const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
           row.appendChild(timeElem); //Insert end time
           //Insert ratio
-          row.children[1].innerText = `${row.children[1].innerText} (${ratio} gold/hr)`
-        } else if(availableQuests[i].type === "slow") {
+          row.children[1].innerText = `${row.children[1].innerText} (${ratio} gold/hr)`;
+
+        } else if(availableQuests[i].type === 'slow') {
           //Convert 7 second actions to 6 second actions
-          const actionsNeeded = parseInt(availableQuests[i].objective.split(" ")[0].replace(/,/g, ""));
+          const actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
           const convertedActions = actionsNeeded * 7 / 6;
           const timeElem = this.getTimeElem(convertedActions, row.firstChild.className, false);
           row.appendChild(timeElem);
+
+        } else if(availableQuests[i].type === 'friend') { //Base gold objective
+          const goldObjective = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
+          const currentMonster = this.gameData.playerActionService.selectedMonster;
+          const actionsNeeded = Math.ceil(goldObjective / (8 + 2 * currentMonster));
+          const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
+          row.appendChild(timeElem); //Insert end time
+
         } else if(row.id !== 'questInfoRow'){ //Time not able to be calculated
           const timeElem = this.getTimeElem(-1, row.firstChild.className, false);
           row.appendChild(timeElem);
@@ -487,6 +510,7 @@ async function setupScript() {
     console.log('QuesBS: The script has been loaded.');
 
     clearInterval(QuesBSLoader);
+    await QuesBS.getGameData();
     await QuesBS.initPathDetection();
     await QuesBS.updateQuestData();
   } else if(QuesBS) {
