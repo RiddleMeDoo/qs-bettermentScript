@@ -23,6 +23,9 @@ class Script {
       minActions: 360,
       maxActions: 580,
     };
+    this.settings = JSON.parse(localStorage.getItem('QuesBS_settings')) ?? {
+      strActions: 30000
+    }
     this.playerId;
     this.gameData;
 
@@ -176,6 +179,11 @@ class Script {
       });
       //Sometimes there is no change observed for the initial page load, so call function
       await this.handleVillageQuest({target: target});
+
+    } else if(path[path.length - 1].toLowerCase() === 'settings' && path[0].toLowerCase() === 'village') {
+      //const target = document.querySelector('app-village-settings').firstChild;
+      //Insert our own settings box
+      await this.insertVillageSettingsElem();
     }
   }
 
@@ -426,7 +434,7 @@ class Script {
         if(objectiveText[1] === 'actions') {
           //Check for str point reward
           const reward = row.children[2].innerText.split(' ')[1];
-          if(reward === 'strength') {
+          if(reward === 'strength' && parseInt(objectiveText[0]) <= this.settings.strActions) {
             row.children[2].style.border = 'inset';
           }
           //Insert end time
@@ -484,6 +492,44 @@ class Script {
       }
       return this.getQuestRatioInfo(); //The bottom row that contains extra info
     }
+  }
+  
+  async insertVillageSettingsElem() {
+    /**
+     * Inserts a custom settings box into the village settings page
+     */
+    //Get settings page contents
+    let settingsOverview = document.querySelector('app-village-settings');
+    while(!settingsOverview) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      settingsOverview = document.querySelector('app-village-settings');
+    }
+
+    //Clone a copy of the armory settings to match the css style
+    const questSettings = settingsOverview.firstChild.children[1].cloneNode(true);
+    //Modify to our liking
+    questSettings.firstChild.children[3].remove();
+    questSettings.firstChild.children[2].remove();
+    questSettings.firstChild.firstChild.innerText = 'QuesBS Highlight Quest';
+    questSettings.firstChild.children[1].firstChild.innerText = 'Max actions for strength point';
+    questSettings.firstChild.children[1].children[1].id = 'actionsLimitSetting';
+    questSettings.firstChild.children[1].children[1].style.width = '50%';
+    questSettings.firstChild.children[1].children[1].firstChild.value = this.settings.strActions;
+    questSettings.firstChild.children[1].children[1].firstChild.style.width = '6em';
+    questSettings.firstChild.children[2].firstChild.firstChild.innerText = 'Save QuesBS Quests';
+    //Add a save function for button
+    questSettings.firstChild.children[2].firstChild.onclick = () => {
+      const newActions = parseInt(document.getElementById('actionsLimitSetting').firstChild.value);
+      //Data validation
+      if(isNaN(newActions)) {
+        this.gameData.snackbarService.openSnackbar('Error: Value should be a number'); //feedback popup
+      } else {
+        this.settings.strActions = newActions;
+        localStorage.setItem('QuesBS_settings', JSON.stringify(this.settings));
+        this.gameData.snackbarService.openSnackbar('Settings saved successfully'); //feedback popup
+      }
+    }
+    settingsOverview.appendChild(questSettings);
   }
 }
 
