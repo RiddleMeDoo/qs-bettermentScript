@@ -223,15 +223,7 @@ class Script {
         //Update number of refreshes used, just in case
         await this.updateRefreshes();
         infoRow = await this.insertEndTimeElem(tableBody, false, true);
-        //Special case: Gold reward quest
-        const rewardText = tableBody.children[0].children[2].innerText;
-        const reward = rewardText.split(' ');
-        if(reward[1].toLowerCase() === 'gold') {
-          //Add a gold ratio
-          const actionsNeeded = parseInt(tableBody.children[0].children[1].innerText.split(' ')[2]);
-          const ratio = Math.round(parseInt(reward[0]) / actionsNeeded * 600).toLocaleString();
-          tableBody.children[0].children[2].innerText = `${rewardText} (${ratio} gold/hr)`;
-        }
+
       } else {
         return;
       }
@@ -394,18 +386,28 @@ class Script {
       if(objectiveElemText[3].toLowerCase() === 'actions' || objectiveElemText[3].toLowerCase() === 'survived') {
         const actionsDone = parseInt(objectiveElemText[0]);
         const objective = parseInt(objectiveElemText[2]);
+        const reward = row.children[2].innerText.split(' ');
+        let actionsNeeded = -1;
 
         //Special case: Party action quest (because it has 7 sec timer)
         if(row.children[2].innerText.split(' ')[1].toLowerCase() === 'party') {
-          const convertedActions = (objective - actionsDone) * 7 / 6;
-          timeElem = this.getTimeElem(convertedActions, row.firstChild.className, isVillage);
-          row.appendChild(timeElem);
-          return await this.getQuestInfoElem(convertedActions);
+          actionsNeeded = (objective - actionsDone) * 7 / 6;
         } else {
-          timeElem = this.getTimeElem(objective - actionsDone, row.firstChild.className, isVillage);
-          row.appendChild(timeElem);
-          return await this.getQuestInfoElem(objective - actionsDone);
+          actionsNeeded = objective - actionsDone;
         }
+        timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, isVillage);
+        row.appendChild(timeElem);
+        
+        //Add ratios
+        if(reward[1].toLowerCase() === 'gold') { 
+          const ratio = Math.round(parseInt(reward[0]) / actionsNeeded * 600).toLocaleString();
+          row.children[2].innerText = `${row.children[2].innerText} (${ratio} gold/hr)`;
+        } else {
+          const ratio = (parseInt(reward[0]) / actionsNeeded).toFixed(3);
+          row.children[2].innerText = `${row.children[2].innerText} (${ratio})`;
+        }
+        
+        return await this.getQuestInfoElem(actionsNeeded);
         
       } else if(objectiveElemText[3].toLowerCase() === 'base') { //Special case: Exp reward quest
         const goldCollected = parseInt(objectiveElemText[0]);
@@ -415,6 +417,11 @@ class Script {
         const actionsNeeded = Math.ceil((objective - goldCollected) / baseGoldPerAction);
         timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, isVillage);
         row.appendChild(timeElem);
+        
+        //Add ratio
+        const reward = row.children[2].innerText.split(' ')[0].replace(/,/g, '');
+        const ratio = Math.round(parseInt(reward) / actionsNeeded).toLocaleString();
+        row.children[2].innerText = `${row.children[2].innerText} (${ratio} exp/action)`;
         return await this.getQuestInfoElem(actionsNeeded);
 
       } else {
@@ -432,7 +439,7 @@ class Script {
         const objectiveText = row.children[1].innerText.split(' ');
         let timeElem = null;
         if(objectiveText[1] === 'actions') {
-          //Check for str point reward
+          //Add border if there's a str point reward
           const reward = row.children[2].innerText.split(' ')[1];
           if(reward === 'strength' && parseInt(objectiveText[0]) <= this.settings.strActions) {
             row.children[2].style.border = 'inset';
@@ -454,39 +461,35 @@ class Script {
       //Go through each quest and update row accordingly
       for(let i = 0; i < availableQuests.length; i++) {
         const row = tableBody.children[i];
+        let actionsNeeded = -1;
+
         if(availableQuests[i].type === 'swordsman' || availableQuests[i].type === 'tax' || 
           availableQuests[i].type === 'gems' || availableQuests[i].type === 'spell') { 
           //Above are the quests that require actions to be done
-          const actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
-          const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
-          row.appendChild(timeElem); //Insert end time
+          actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
 
         } else if(availableQuests[i].type === 'treasure') {
-          //Add a gold ratio
-          const actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
+          actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
+          //Insert a gold ratio
           const reward = parseInt(availableQuests[i].reward.split(' ')[0].replace(/,/g, ''));
           const ratio = Math.round(reward / actionsNeeded * 600).toLocaleString();
-          const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
-          row.appendChild(timeElem); //Insert end time
-          //Insert ratio
           row.children[1].innerText = `${row.children[1].innerText} (${ratio} gold/hr)`;
 
         } else if(availableQuests[i].type === 'slow') {
           //Convert 7 second actions to 6 second actions
-          const actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
-          const convertedActions = actionsNeeded * 7 / 6;
-          const timeElem = this.getTimeElem(convertedActions, row.firstChild.className, false);
-          row.appendChild(timeElem);
+          actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, '')) * 7 / 6;
 
         } else if(availableQuests[i].type === 'friend') { //Base gold objective
           const goldObjective = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
           const currentMonster = this.gameData.playerActionService.selectedMonster;
-          const actionsNeeded = Math.ceil(goldObjective / (8 + 2 * currentMonster));
+          actionsNeeded = Math.ceil(goldObjective / (8 + 2 * currentMonster));
+          //Insert a exp ratio
+          const reward = parseInt(row.children[1].innerText.split(' ')[0].replace(/,/g, ''));
+          const ratio = Math.round(reward / actionsNeeded).toLocaleString();
+          row.children[1].innerText = `${row.children[1].innerText} (${ratio} exp/action)`;
+        } 
+        if(row.id !== 'questInfoRow'){
           const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
-          row.appendChild(timeElem); //Insert end time
-
-        } else if(row.id !== 'questInfoRow'){ //Time not able to be calculated
-          const timeElem = this.getTimeElem(-1, row.firstChild.className, false);
           row.appendChild(timeElem);
         }
       }
