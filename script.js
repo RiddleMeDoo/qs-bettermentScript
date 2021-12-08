@@ -402,7 +402,7 @@ class Script {
         if(reward[1].toLowerCase() === 'gold') { 
           const ratio = Math.round(parseInt(reward[0]) / actionsNeeded * 600).toLocaleString();
           row.children[2].innerText = `${row.children[2].innerText} (${ratio} gold/hr)`;
-        } else {
+        } else if(!isVillage) {
           const ratio = (parseInt(reward[0]) / actionsNeeded).toFixed(3);
           row.children[2].innerText = `${row.children[2].innerText} (${ratio})`;
         }
