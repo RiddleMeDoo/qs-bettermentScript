@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.4.0
+// @version      1.4.1
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -400,10 +400,10 @@ class Script {
         
         //Add ratios
         if(reward[1].toLowerCase() === 'gold') { 
-          const ratio = Math.round(parseInt(reward[0]) / actionsNeeded * 600).toLocaleString();
+          const ratio = Math.round(parseInt(reward[0]) / objective * 600).toLocaleString();
           row.children[2].innerText = `${row.children[2].innerText} (${ratio} gold/hr)`;
         } else if(!isVillage) {
-          const ratio = (parseInt(reward[0]) / actionsNeeded).toFixed(3);
+          const ratio = (parseInt(reward[0]) / objective).toFixed(3);
           row.children[2].innerText = `${row.children[2].innerText} (${ratio})`;
         }
         
