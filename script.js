@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.4.1
+// @version      1.4.1.1
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -112,6 +112,9 @@ class Script {
     this.villageQuestObserver = new MutationObserver(mutationsList => {
       scriptObject.handleVillageQuest(mutationsList[0]);
     })
+    this.eventQuestObserver = new MutationObserver(mutationsList => {
+      scriptObject.handleEventQuest(mutationsList[0]);
+    })
   }
 
 
@@ -157,7 +160,7 @@ class Script {
       let target = document.querySelector('app-actions');
       //Sometimes the script attempts to search for element before it loads in
       while(!target) {
-        await new Promise(resolve => setTimeout(resolve, 200))
+        await new Promise(resolve => setTimeout(resolve, 50))
         target = document.querySelector('app-actions');
       }
       this.personalQuestObserver.observe(target, {
@@ -166,12 +169,13 @@ class Script {
       //Sometimes there is no change observed for the initial page load, so call function
       await this.handlePersonalQuest({target: target});
 
+
     } else if(path[path.length - 1].toLowerCase() === 'quests' && path[0].toLowerCase() === 'village') {
       //Observe village quest page for updates
       let target = document.querySelector('app-village');
       //Sometimes the script attempts to search for element before it loads in
       while(!target) {
-        await new Promise(resolve => setTimeout(resolve, 200))
+        await new Promise(resolve => setTimeout(resolve, 50))
         target = document.querySelector('app-village');
       }
       this.villageQuestObserver.observe(target, {
@@ -180,12 +184,37 @@ class Script {
       //Sometimes there is no change observed for the initial page load, so call function
       await this.handleVillageQuest({target: target});
 
+
     } else if(path[path.length - 1].toLowerCase() === 'settings' && path[0].toLowerCase() === 'village') {
-      //const target = document.querySelector('app-village-settings').firstChild;
       //Insert our own settings box
       await this.insertVillageSettingsElem();
+    
+    
+    } else if(path[0].toLowerCase() === 'events' && path[1].toLowerCase() === 'quest') {
+      if(path[path.length - 1].toLowerCase() === 'tournament-rankings') return;
+      
+      let target = document.querySelector('app-event-quest-overview')?.firstChild?.children[1]?.children[2]?.firstChild;
+      while(target === undefined || target === null) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        target = document.querySelector('app-event-quest-overview')?.firstChild?.children[1]?.children[2]?.firstChild;
+      }
+
+      this.eventQuestObserver.observe(target, {
+        childList: true, subtree: false, attributes: false,
+      });
     }
   }
+
+
+  handleEventQuest(mutation) {
+    /**
+     * Play a sound if mutation is a finished quest
+     */
+    if(mutation.removedNodes.length > 0) {
+      this.gameData.playerSoundService.playSound('quest');
+    }
+  }
+
 
   async handlePersonalQuest(mutation) {
     /**
