@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.4.1.1
+// @version      1.4.1.2
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -32,6 +32,14 @@ class Script {
     //observer setup
     this.initObservers();
     this.currentPath = window.location.hash.split('/').splice(2).join();
+
+    //Event only
+    this.eventAudio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3');
+    this.eventAudio.volume = 0.5;
+  }
+
+  playAudio() {
+    this.eventAudio.play();
   }
 
   async getGameData() { //ULTIMATE POWER
@@ -147,7 +155,7 @@ class Script {
   async handlePathChange(url) {
     /**
      * Detects which page the player navigated to when the url path
-     * has changed, then activates the observer for the page. 
+     * has changed, then activates the observer for the page.
      */
     const path = url.split('/').slice(2);
     if(path.join() !== this.currentPath) {
@@ -188,11 +196,11 @@ class Script {
     } else if(path[path.length - 1].toLowerCase() === 'settings' && path[0].toLowerCase() === 'village') {
       //Insert our own settings box
       await this.insertVillageSettingsElem();
-    
-    
+
+
     } else if(path[0].toLowerCase() === 'events' && path[1].toLowerCase() === 'quest') {
       if(path[path.length - 1].toLowerCase() === 'tournament-rankings') return;
-      
+
       let target = document.querySelector('app-event-quest-overview')?.firstChild?.children[1]?.children[2]?.firstChild;
       while(target === undefined || target === null) {
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -211,7 +219,7 @@ class Script {
      * Play a sound if mutation is a finished quest
      */
     if(mutation.removedNodes.length > 0) {
-      this.gameData.playerSoundService.playSound('quest');
+      this.eventAudio.play();
     }
   }
 
@@ -347,7 +355,7 @@ class Script {
     /**
      * Returns an element used to describe the end time for each quest, used for
      * the end time column. It has styled CSS through the className, and the
-     * time calculation differs for village vs personal. If there are an 
+     * time calculation differs for village vs personal. If there are an
      * invalid number of actionsNeeded, the time is N/A.
      */
     const cell = document.createElement('td');
@@ -403,8 +411,8 @@ class Script {
   }
 
   async insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
-    /* Returns info row because I suck at structure 
-    ** Also inserts the end time for each quest 
+    /* Returns info row because I suck at structure
+    ** Also inserts the end time for each quest
     */
     //First, determine if quest is active
     if(isActiveQuest && tableBody.children[0]) {
@@ -426,18 +434,18 @@ class Script {
         }
         timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, isVillage);
         row.appendChild(timeElem);
-        
+
         //Add ratios
-        if(reward[1].toLowerCase() === 'gold') { 
+        if(reward[1].toLowerCase() === 'gold') {
           const ratio = Math.round(parseInt(reward[0]) / objective * 600).toLocaleString();
           row.children[2].innerText = `${row.children[2].innerText} (${ratio} gold/hr)`;
         } else if(!isVillage) {
           const ratio = (parseInt(reward[0]) / objective).toFixed(3);
           row.children[2].innerText = `${row.children[2].innerText} (${ratio})`;
         }
-        
+
         return await this.getQuestInfoElem(actionsNeeded);
-        
+
       } else if(objectiveElemText[3].toLowerCase() === 'base') { //Special case: Exp reward quest
         const goldCollected = parseInt(objectiveElemText[0]);
         const objective = parseInt(objectiveElemText[2]);
@@ -446,7 +454,7 @@ class Script {
         const actionsNeeded = Math.ceil((objective - goldCollected) / baseGoldPerAction);
         timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, isVillage);
         row.appendChild(timeElem);
-        
+
         //Add ratio
         const reward = row.children[2].innerText.split(' ')[0].replace(/,/g, '');
         const ratio = Math.round(parseInt(reward) / actionsNeeded).toLocaleString();
@@ -464,7 +472,7 @@ class Script {
       //Get village quests
       for(let i = 0; i < tableBody.children.length; i++) {
         let row = tableBody.children[i];
-        
+
         const objectiveText = row.children[1].innerText.split(' ');
         let timeElem = null;
         if(objectiveText[1] === 'actions') {
@@ -492,8 +500,8 @@ class Script {
         const row = tableBody.children[i];
         let actionsNeeded = -1;
 
-        if(availableQuests[i].type === 'swordsman' || availableQuests[i].type === 'tax' || 
-          availableQuests[i].type === 'gems' || availableQuests[i].type === 'spell') { 
+        if(availableQuests[i].type === 'swordsman' || availableQuests[i].type === 'tax' ||
+          availableQuests[i].type === 'gems' || availableQuests[i].type === 'spell') {
           //Above are the quests that require actions to be done
           actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
 
@@ -516,7 +524,7 @@ class Script {
           const reward = parseInt(row.children[1].innerText.split(' ')[0].replace(/,/g, ''));
           const ratio = Math.round(reward / actionsNeeded).toLocaleString();
           row.children[1].innerText = `${row.children[1].innerText} (${ratio} exp/action)`;
-        } 
+        }
         if(row.id !== 'questInfoRow'){
           const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
           row.appendChild(timeElem);
@@ -525,7 +533,7 @@ class Script {
       return this.getQuestRatioInfo(); //The bottom row that contains extra info
     }
   }
-  
+
   async insertVillageSettingsElem() {
     /**
      * Inserts a custom settings box into the village settings page
@@ -591,6 +599,7 @@ async function setupScript() {
     await QuesBS.getGameData();
     await QuesBS.initPathDetection();
     await QuesBS.updateQuestData();
+    window.playAudio = () => QuesBS.playAudio();
   } else if(QuesBS) {
     console.log('QuesBS: The script has already been loaded.');
     clearInterval(QuesBSLoader);
