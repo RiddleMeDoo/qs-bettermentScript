@@ -121,7 +121,7 @@ class Script {
       scriptObject.handleVillageQuest(mutationsList[0]);
     })
     this.eventQuestObserver = new MutationObserver(mutationsList => {
-      scriptObject.handleEventQuest(mutationsList[0]);
+      scriptObject.handleEventQuest(mutationsList);
     })
   }
 
@@ -214,11 +214,12 @@ class Script {
   }
 
 
-  handleEventQuest(mutation) {
+  handleEventQuest(mutations) {
     /**
      * Play a sound if mutation is a finished quest
      */
-    if(mutation.removedNodes.length > 0) {
+    const finished = mutations.filter(mutation => mutation.addedNodes.length > 0).length > 2 ? true : false;
+    if(finished) {
       this.eventAudio.play();
     }
   }
