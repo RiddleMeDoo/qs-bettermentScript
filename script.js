@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.4.1.2
+// @version      1.4.1.3
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -35,7 +35,7 @@ class Script {
 
     //Event only
     this.eventAudio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3');
-    this.eventAudio.volume = 0.5;
+    this.eventAudio.volume = 0.3;
   }
 
   playAudio() {
@@ -81,6 +81,9 @@ class Script {
     }
     //Can't be bothered to calculate it accurately using all 4 stats
     this.quest.baseStat = Math.min(15, this.gameData.playerStatsService?.strength * 0.0025);
+
+    //Event only function
+    await this.getPartnerSpeed();
   }
 
   async getPartyActions() {
@@ -91,6 +94,12 @@ class Script {
     }
 
     return this.gameData.partyService.partyOverview.partyInformation[this.playerId].actions.daily_actions_remaining;
+  }
+
+  async getPartnerSpeed() {
+    const speeds = Object.values(this.gameData.playerPartnerService.partnerData).map(partner => partner.boosts.speed);
+    this.partnerSpeed = parseFloat((18 / (0.1 + speeds[0] / (speeds[0] + 2500))));
+    this.numPartners = speeds.length;
   }
 
   async updateRefreshes() {
@@ -210,6 +219,9 @@ class Script {
       this.eventQuestObserver.observe(target, {
         childList: true, subtree: false, attributes: false,
       });
+
+      //Insert an end time if applicable
+      this.insertPartnerEndTime(target.children[target.children.length - 1]);
     }
   }
 
@@ -221,6 +233,30 @@ class Script {
     const finished = mutations.filter(mutation => mutation.addedNodes.length > 0).length > 2 ? true : false;
     if(finished) {
       this.eventAudio.play();
+    } else {
+      const questElem = mutations.filter(mutation => mutation.addedNodes.length > 0 && mutation.addedNodes[0].innerText)[0].addedNodes[0];
+      this.insertPartnerEndTime(questElem);
+    }
+  }
+
+  insertPartnerEndTime(targetElem) {
+    /**
+     * Inserts an end time text to event quest if active
+     */
+     if(targetElem.innerText?.startsWith('Partner')) {
+        
+      //Calculate end time
+      const date = new Date();
+      const actionsLeft = 300 - parseInt(targetElem.innerText.split(' ')[3]);
+      const minutes = actionsLeft / (60/this.partnerSpeed) / this.numPartners;
+      const finishTime = new Date(date.getTime() + minutes * 60 * 1000).toLocaleTimeString('en-GB');
+      const numActions = Math.ceil(minutes * 60 / 6);
+
+      //Insert an end time for partner actions
+      const endTime = document.createElement('div');
+      endTime.innerText = `...(End time: ${finishTime}) (${numActions} actions)`;
+      
+      targetElem.appendChild(endTime);
     }
   }
 
