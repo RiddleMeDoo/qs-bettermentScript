@@ -222,6 +222,7 @@ class Script {
 
       //Insert an end time if applicable
       this.insertPartnerEndTime(target.children[target.children.length - 1]);
+      this.disableEventShop(target.nextElementSibling.children);
     }
   }
 
@@ -257,6 +258,16 @@ class Script {
       endTime.innerText = `...(End time: ${finishTime}) (${numActions} actions)`;
       
       targetElem.appendChild(endTime);
+    }
+  }
+
+  disableEventShop(rewardsList) {
+    for(let i=0; i < rewardsList.length; i++) {
+      if(rewardsList[i].className !== 'h5') {
+        const button = rewardsList[i].children[2].firstChild;
+        button.disabled = true;
+        button.className = 'mat-focus-indicator mat-raised-button mat-button-base mat-button-disabled';
+      }
     }
   }
 
