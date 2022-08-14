@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.4.1
-// @description  A script that lets you know more info about quests
+// @version      1.5
+// @description  A script that lets you know info about quests and more!
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @grant        none
@@ -26,6 +26,10 @@ class Script {
     this.settings = JSON.parse(localStorage.getItem('QuesBS_settings')) ?? {
       strActions: 30000
     }
+    this.catacomb = {
+      villageActionSpeed: 0,
+      actionTimerSeconds: 24,
+    }
     this.playerId;
     this.gameData;
 
@@ -36,10 +40,10 @@ class Script {
 
   async getGameData() { //ULTIMATE POWER
     //Get a reference to *all* the data the game is using to run
-    this.gameData = getAllAngularRootElements()[0].children[1]['__ngContext__'][30]?.playerGeneralService;
+    this.gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
     while(this.gameData === undefined) { //Power comes with a price; wait for it to load
       await new Promise(resolve => setTimeout(resolve, 500))
-      this.gameData = getAllAngularRootElements()[0].children[1]['__ngContext__'][30]?.playerGeneralService;
+      this.gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
     }
   }
 
@@ -111,7 +115,10 @@ class Script {
     });
     this.villageQuestObserver = new MutationObserver(mutationsList => {
       scriptObject.handleVillageQuest(mutationsList[0]);
-    })
+    });
+    this.catacombObserver = new MutationObserver(mutationsList => {
+      scriptObject.handleCatacombPage(mutationsList[0]);
+    });
   }
 
 
@@ -184,6 +191,15 @@ class Script {
       //const target = document.querySelector('app-village-settings').firstChild;
       //Insert our own settings box
       await this.insertVillageSettingsElem();
+    } else if(path[path.length - 1].toLowerCase() === 'catacomb' && path[0].toLowerCase() === 'catacombs') {
+      let target = document.querySelector('app-catacomb-main');
+      while(!target) {
+        await new Promise(resolve => setTimeout(resolve, 200))
+        target = document.querySelector('app-catacomb-main').firstChild;
+      }
+      this.catacombObserver.observe(target, {
+        childList: true, subtree: true, attributes: false,
+      });
     }
   }
 
@@ -279,6 +295,7 @@ class Script {
     const stop = {
       'actions,quests': () => this.personalQuestObserver.disconnect(),
       'village,quests': () => this.villageQuestObserver.disconnect(),
+      'catacombs,catacomb': () => this.catacombObserver.disconnect(),
     }
     if(stop[pathname]) stop[pathname]();
   }
