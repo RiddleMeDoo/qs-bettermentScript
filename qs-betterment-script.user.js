@@ -6,6 +6,7 @@
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @grant        none
+// @require      quests.js
 // ==/UserScript==
 
 class Script {
@@ -30,79 +31,73 @@ class Script {
       villageActionSpeed: 0,
       actionTimerSeconds: 24,
     }
-    this.playerId;
-    this.gameData;
+    //this.playerId;
+    //this.gameData;
 
     //observer setup
     this.initObservers();
     this.currentPath = window.location.hash.split('/').splice(2).join();
+
+    
+    this.quest = {...this.quest, await updateQuestData(gameData)};
   }
 
-  async getGameData() { //ULTIMATE POWER
-    //Get a reference to *all* the data the game is using to run
-    this.gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
-    while(this.gameData === undefined) { //Power comes with a price; wait for it to load
-      await new Promise(resolve => setTimeout(resolve, 500))
-      this.gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
-    }
-  }
+  // async updateQuestData() {
+  //   while(this.gameData === undefined) {
+  //     await this.getGameData();
+  //     //wait until gameData loads, it is important
+  //     await new Promise(resolve => setTimeout(resolve, 200));
+  //   }
+  //   //Couldn't find an easier method to get quest completions than a POST request
+  //   this.gameData.httpClient.post('/player/load/misc', {}).subscribe(
+  //     val => {
+  //       this.quest.questsCompleted = val.playerMiscData.quests_completed;
+  //       this.playerId = val.playerMiscData.player_id;
+  //     },
+  //     response => console.log('QuesBS: POST request failure', response)
+  //   );
 
-  async updateQuestData() {
-    while(this.gameData === undefined) {
-      await this.getGameData();
-      //wait until gameData loads, it is important
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-    //Couldn't find an easier method to get quest completions than a POST request
-    this.gameData.httpClient.post('/player/load/misc', {}).subscribe(
-      val => {
-        this.quest.questsCompleted = val.playerMiscData.quests_completed;
-        this.playerId = val.playerMiscData.player_id;
-      },
-      response => console.log('QuesBS: POST request failure', response)
-    );
+  //   await this.updateRefreshes();
+  //   if(this.gameData.playerVillageService?.isInVillage === true) {
+  //     let villageService = this.gameData.playerVillageService;
+  //     //Wait for service to load
+  //     while(villageService === undefined) {
+  //       await new Promise(resolve => setTimeout(resolve, 200));
+  //       villageService = this.gameData.playerVillageService;
+  //     }
+  //     this.quest.villageBold = villageService.strengths.bold.amount;
+  //     this.quest.villageSize = villageService.general.members.length;
+  //     this.quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
+  //     this.quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
+  //   }
+  //   //Can't be bothered to calculate it accurately using all 4 stats
+  //   this.quest.baseStat = Math.min(15, this.gameData.playerStatsService?.strength * 0.0025);
+  // }
 
-    await this.updateRefreshes();
-    if(this.gameData.playerVillageService?.isInVillage === true) {
-      let villageService = this.gameData.playerVillageService;
-      //Wait for service to load
-      while(villageService === undefined) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        villageService = this.gameData.playerVillageService;
-      }
-      this.quest.villageBold = villageService.strengths.bold.amount;
-      this.quest.villageSize = villageService.general.members.length;
-      this.quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
-      this.quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
-    }
-    //Can't be bothered to calculate it accurately using all 4 stats
-    this.quest.baseStat = Math.min(15, this.gameData.playerStatsService?.strength * 0.0025);
-  }
+  // async getPartyActions() {
+  //   //A function to wait for party service to load
+  //   //And also to abstract the horribly long method
+  //   while(this.gameData?.partyService?.partyOverview?.partyInformation === undefined) {
+  //     await new Promise(resolve => setTimeout(resolve, 200));
+  //   }
 
-  async getPartyActions() {
-    //A function to wait for party service to load
-    //And also to abstract the horribly long method
-    while(this.gameData?.partyService?.partyOverview?.partyInformation === undefined) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
+  //   return this.gameData.partyService.partyOverview.partyInformation[this.playerId].actions.daily_actions_remaining;
+  // }
 
-    return this.gameData.partyService.partyOverview.partyInformation[this.playerId].actions.daily_actions_remaining;
-  }
+  // async updateRefreshes() {
+  //   //Only made a load waiter because script was having issues with not loading
+  //   while(this.gameData?.playerQuestService?.refreshesUsed === undefined) {
+  //     await new Promise(resolve => setTimeout(resolve, 200));
+  //   }
+  //   this.quest.numRefreshes = this.gameData.playerQuestService.refreshesBought + 20;
+  //   this.quest.refreshesUsed = this.gameData.playerQuestService.refreshesUsed;
+  // }
 
-  async updateRefreshes() {
-    //Only made a load waiter because script was having issues with not loading
-    while(this.gameData?.playerQuestService?.refreshesUsed === undefined) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-    this.quest.numRefreshes = this.gameData.playerQuestService.refreshesBought + 20;
-    this.quest.refreshesUsed = this.gameData.playerQuestService.refreshesUsed;
-  }
-
-  async updateVillageRefreshes() {
-    let villageService = this.gameData.playerVillageService;
-    this.quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
-    this.quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
-  }
+  // async updateVillageRefreshes() {
+  //   let villageService = this.gameData.playerVillageService;
+  //   this.quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
+  //   this.quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
+  // }
 
   initObservers() {
     /**
@@ -111,10 +106,10 @@ class Script {
      */
     let scriptObject = this; //mutation can't keep track of this
     this.personalQuestObserver = new MutationObserver(mutationsList => {
-      scriptObject.handlePersonalQuest(mutationsList[0]);
+      handlePersonalQuest(mutationsList[0]);
     });
     this.villageQuestObserver = new MutationObserver(mutationsList => {
-      scriptObject.handleVillageQuest(mutationsList[0]);
+      handleVillageQuest(mutationsList[0]);
     });
     this.catacombObserver = new MutationObserver(mutationsList => {
       scriptObject.handleCatacombPage(mutationsList[0]);
@@ -124,27 +119,27 @@ class Script {
 
   async initPathDetection() {
     /**
-     * Initializes the event trigger that will watch for changes in the
-     * url path. This will allow us to determine which part of the
-     * script to activate on each specific page.
-     */
-     while(this.gameData === undefined) {
-      await this.getGameData();
-      //wait until gameData loads, it is important
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-    let router = this.gameData?.router
+    * Initializes the event trigger that will watch for changes in the
+    * url path. This will allow us to determine which part of the
+    * script to activate on each specific page.
+    */
+    // while(this.gameData === undefined) {
+    //   await this.getGameData();
+    //   //wait until gameData loads, it is important
+    //   await new Promise(resolve => setTimeout(resolve, 200));
+    // }
+    let router = gameData?.router
     //Wait for service to load
     while(router === undefined && router?.events === undefined) {
       await new Promise(resolve => setTimeout(resolve, 200));
-      router = this.gameData.router
+      router = gameData?.router
     }
-    this.gameData.router.events.subscribe(event => {
+    gameData.router.events.subscribe(event => {
       if(event.navigationTrigger) this.handlePathChange(event.url);
     });
 
     //Send a popup to player as feedback
-    this.gameData.snackbarService.openSnackbar('QuesBS has been loaded.');
+    gameData.snackbarService.openSnackbar('QuesBS has been loaded.');
   }
 
 
@@ -171,7 +166,7 @@ class Script {
         childList: true, subtree: true, attributes: false,
       });
       //Sometimes there is no change observed for the initial page load, so call function
-      await this.handlePersonalQuest({target: target});
+      await handlePersonalQuest({target: target});
 
     } else if(path[path.length - 1].toLowerCase() === 'quests' && path[0].toLowerCase() === 'village') {
       //Observe village quest page for updates
@@ -185,12 +180,12 @@ class Script {
         childList: true, subtree: true, attributes: false,
       });
       //Sometimes there is no change observed for the initial page load, so call function
-      await this.handleVillageQuest({target: target});
+      await handleVillageQuest({target: target});
 
     } else if(path[path.length - 1].toLowerCase() === 'settings' && path[0].toLowerCase() === 'village') {
       //const target = document.querySelector('app-village-settings').firstChild;
       //Insert our own settings box
-      await this.insertVillageSettingsElem();
+      await insertVillageSettingsElem();
     } else if(path[path.length - 1].toLowerCase() === 'catacomb' && path[0].toLowerCase() === 'catacombs') {
       let target = document.querySelector('app-catacomb-main');
       while(!target) {
@@ -203,93 +198,93 @@ class Script {
     }
   }
 
-  async handlePersonalQuest(mutation) {
-    /**
-     * Handles a new update to the personal quests page. It loads in all
-     * the extra quest information, which differs depending on an active or
-     * non-active quest page view.
-     */
-    //Filter out any unneeded mutations/updates to the page
-    if(mutation?.addedNodes?.length < 1 ||
-      mutation?.addedNodes?.[0]?.localName === 'mat-tooltip-component' ||
-      mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
-      mutation?.addedNodes?.[0]?.nodeName === 'TD' ||
-      mutation?.addedNodes?.[0]?.nodeName === '#text' ||
-      mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
-      mutation?.addedNodes?.[0]?.id === 'questInfoRow') {
-      return;
-    }
-    //Modify the table used to hold quest information
-    const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
+  // async handlePersonalQuest(mutation) {
+  //   /**
+  //    * Handles a new update to the personal quests page. It loads in all
+  //    * the extra quest information, which differs depending on an active or
+  //    * non-active quest page view.
+  //    */
+  //   //Filter out any unneeded mutations/updates to the page
+  //   if(mutation?.addedNodes?.length < 1 ||
+  //     mutation?.addedNodes?.[0]?.localName === 'mat-tooltip-component' ||
+  //     mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
+  //     mutation?.addedNodes?.[0]?.nodeName === 'TD' ||
+  //     mutation?.addedNodes?.[0]?.nodeName === '#text' ||
+  //     mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
+  //     mutation?.addedNodes?.[0]?.id === 'questInfoRow') {
+  //     return;
+  //   }
+  //   //Modify the table used to hold quest information
+  //   const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
 
-    if(questTable) {
-      let infoRow = null;
+  //   if(questTable) {
+  //     let infoRow = null;
 
-      //Add end time column to table
-      this.addEndTimeColumn(questTable);
+  //     //Add end time column to table
+  //     this.addEndTimeColumn(questTable);
 
-      const tableBody = questTable.children[1];
+  //     const tableBody = questTable.children[1];
 
-      //There are two states: active quest and no quest
-      if(tableBody.children.length > 2) {//No quest
-        //Get the info row that goes at the bottom
-        infoRow = await this.insertEndTimeElem(tableBody, false, false);
+  //     //There are two states: active quest and no quest
+  //     if(tableBody.children.length > 2) {//No quest
+  //       //Get the info row that goes at the bottom
+  //       infoRow = await this.insertEndTimeElem(tableBody, false, false);
 
-      } else if(tableBody.children.length > 0) { //Active quest
-        //Update number of refreshes used, just in case
-        await this.updateRefreshes();
-        infoRow = await this.insertEndTimeElem(tableBody, false, true);
+  //     } else if(tableBody.children.length > 0) { //Active quest
+  //       //Update number of refreshes used, just in case
+  //       await this.updateRefreshes();
+  //       infoRow = await this.insertEndTimeElem(tableBody, false, true);
 
-      } else {
-        return;
-      }
+  //     } else {
+  //       return;
+  //     }
 
-      //Add an extra row for extra quest info if there isn't one already
-      if(!document.getElementById('questInfoRow')) tableBody.appendChild(infoRow);
-    }
-  }
+  //     //Add an extra row for extra quest info if there isn't one already
+  //     if(!document.getElementById('questInfoRow')) tableBody.appendChild(infoRow);
+  //   }
+  // }
 
 
-  async handleVillageQuest(mutation) {
-    /**
-     * Handles a new update to the village quests page. It loads in all
-     * the extra quest information, which differs depending on an active or
-     * non-active quest page view.
-     */
-    //Filter out unneeded mutations/updates to page
-    if(mutation?.addedNodes?.length < 1 ||
-      mutation?.addedNodes?.[0]?.nodeName === '#text' ||
-      mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
-      mutation?.addedNodes?.[0]?.nodeName === 'TD' ||
-      mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
-      mutation?.addedNodes?.[0]?.id === 'questInfoRow') {
-      return;
-    }
-    const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
+  // async handleVillageQuest(mutation) {
+  //   /**
+  //    * Handles a new update to the village quests page. It loads in all
+  //    * the extra quest information, which differs depending on an active or
+  //    * non-active quest page view.
+  //    */
+  //   //Filter out unneeded mutations/updates to page
+  //   if(mutation?.addedNodes?.length < 1 ||
+  //     mutation?.addedNodes?.[0]?.nodeName === '#text' ||
+  //     mutation?.addedNodes?.[0]?.nodeName === 'TH' ||
+  //     mutation?.addedNodes?.[0]?.nodeName === 'TD' ||
+  //     mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
+  //     mutation?.addedNodes?.[0]?.id === 'questInfoRow') {
+  //     return;
+  //   }
+  //   const questTable = mutation.target.parentElement.tagName === 'TABLE' ? mutation.target.parentElement : mutation.target.querySelector('table');
 
-    if(questTable) {
-      await this.updateVillageRefreshes(); //Update for refreshes used
-      this.addEndTimeColumn(questTable);
+  //   if(questTable) {
+  //     await this.updateVillageRefreshes(); //Update for refreshes used
+  //     this.addEndTimeColumn(questTable);
 
-      //Add end time
-      const tableBody = questTable.children[1];
+  //     //Add end time
+  //     const tableBody = questTable.children[1];
 
-      //Add end time elems to the end time column
-      if(tableBody.children.length > 2) { //Quest is not active
-        await this.insertEndTimeElem(tableBody, true, false);
-      } else { //Quest is active
-        await this.insertEndTimeElem(tableBody, true, true);
-      }
+  //     //Add end time elems to the end time column
+  //     if(tableBody.children.length > 2) { //Quest is not active
+  //       await this.insertEndTimeElem(tableBody, true, false);
+  //     } else { //Quest is active
+  //       await this.insertEndTimeElem(tableBody, true, true);
+  //     }
 
-      //Add info text at the bottom of quest table
-      const infoRow = document.createTextNode('End time is calculated assuming all members are active. The time is approximate and may not be accurate.'
-        + `${this.quest.villageRefreshesUsed}/${this.quest.villageNumRefreshes} refreshes used.`);
-      infoRow.id = 'questExplanation';
-      if(questTable.parentElement.lastChild.id !== 'questExplanation') {
-        questTable.parentElement.appendChild(infoRow);
-      }
-    }
-  }
+  //     //Add info text at the bottom of quest table
+  //     const infoRow = document.createTextNode('End time is calculated assuming all members are active. The time is approximate and may not be accurate.'
+  //       + `${this.quest.villageRefreshesUsed}/${this.quest.villageNumRefreshes} refreshes used.`);
+  //     infoRow.id = 'questExplanation';
+  //     if(questTable.parentElement.lastChild.id !== 'questExplanation') {
+  //       questTable.parentElement.appendChild(infoRow);
+  //     }
+  //   }
+  // }
 
   stopObserver(pathname) {
     const stop = {
@@ -553,19 +548,28 @@ class Script {
   }
 }
 
+async function getGameData(numAttempts) { //ULTIMATE POWER
+  //Get a reference to *all* the data the game is using to run
+  let gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
+  while(gameData === undefined && numAttempts > 0) { //Power comes with a price; wait for it to load
+    await new Promise(resolve => setTimeout(resolve, 500))
+    gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
+    numAttempts--;
+  }
+  if (!gameData) console.log('QuesBS: Game Data could not be loaded. The script will not work without it. Please refresh the page and try again.');
+
+  return gameData;
+}
+
 
 // This is where the script starts
 var QuesBS = null;
 console.log('QuesBS: Init load');
 let QuesBSLoader = null;
 let numAttempts = 30;
+const gameData = await getGameData(600);
 QuesBSLoader = setInterval(setupScript, 3000);
 
-/*
-window.addEventListener('load', () => { //Load the page first before setting up the script
-  QuesBSLoader = setInterval(setupScript, 3000);
-});
-*/
 window.startQuesBS = () => { // If script doesn't start, call this function (ie. startQuesBS() in the console)
   QuesBSLoader = setInterval(setupScript, 3000);
 }
@@ -576,9 +580,7 @@ async function setupScript() {
     console.log('QuesBS: The script has been loaded.');
 
     clearInterval(QuesBSLoader);
-    await QuesBS.getGameData();
     await QuesBS.initPathDetection();
-    await QuesBS.updateQuestData();
   } else if(QuesBS) {
     console.log('QuesBS: The script has already been loaded.');
     clearInterval(QuesBSLoader);
