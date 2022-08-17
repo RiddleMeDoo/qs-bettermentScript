@@ -65,13 +65,13 @@ function getStatReward(quest) {
    */
   return {
     max: Math.round((quest.questsCompleted/300+quest.baseStat+22.75)*(1+quest.villageBold*2/100)*1.09),
-    min: Math.round((quest.questsCompleted/300+this.quest.baseStat+8.5)*(1+quest.villageBold*2/100)*1.09),
+    min: Math.round((quest.questsCompleted/300+quest.baseStat+8.5)*(1+quest.villageBold*2/100)*1.09),
   }
 }
 
 
 /*** Observer triggers ***/ 
-async function handlePersonalQuest(mutation) {
+async function handlePersonalQuest(mutation, questInfo) {
   /**
    * Handles a new update to the personal quests page. It loads in all
    * the extra quest information, which differs depending on an active or
@@ -94,19 +94,19 @@ async function handlePersonalQuest(mutation) {
     let infoRow = null;
 
     //Add end time column to table
-    this.addEndTimeColumn(questTable);
+    addEndTimeColumn(questTable);
 
     const tableBody = questTable.children[1];
 
     //There are two states: active quest and no quest
     if(tableBody.children.length > 2) {//No quest
       //Get the info row that goes at the bottom
-      infoRow = await this.insertEndTimeElem(tableBody, false, false);
+      infoRow = await insertEndTimeElem(tableBody, questInfo, false, false);
 
     } else if(tableBody.children.length > 0) { //Active quest
       //Update number of refreshes used, just in case
-      await this.updateRefreshes();
-      infoRow = await this.insertEndTimeElem(tableBody, false, true);
+      const refreshes = await getPlayerRefreshes(gameData);
+      infoRow = await insertEndTimeElem(tableBody, {...questInfo, ...refreshes}, false, true);
 
     } else {
       return;
@@ -117,7 +117,7 @@ async function handlePersonalQuest(mutation) {
   }
 }
 
-async function handleVillageQuest(mutation) {
+async function handleVillageQuest(mutation, questInfo, strActionsSetting) {
   /**
    * Handles a new update to the village quests page. It loads in all
    * the extra quest information, which differs depending on an active or
@@ -136,21 +136,21 @@ async function handleVillageQuest(mutation) {
 
   if(questTable) {
     const villageRefreshes = await getVillageRefreshes(); //Update for refreshes used
-    this.addEndTimeColumn(questTable);
+    addEndTimeColumn(questTable);
 
     //Add end time
     const tableBody = questTable.children[1];
 
     //Add end time elems to the end time column
     if(tableBody.children.length > 2) { //Quest is not active
-      await this.insertEndTimeElem(tableBody, true, false);
+      await insertEndTimeElem(tableBody, {...questInfo, ...villageRefreshes}, true, false, strActionsSetting);
     } else { //Quest is active
-      await this.insertEndTimeElem(tableBody, true, true);
+      await insertEndTimeElem(tableBody, {...questInfo, ...villageRefreshes}, true, true, strActionsSetting);
     }
 
     //Add info text at the bottom of quest table
     const infoRow = document.createTextNode('End time is calculated assuming all members are active. The time is approximate and may not be accurate.'
-      + `${this.quest.villageRefreshesUsed}/${this.quest.villageNumRefreshes} refreshes used.`);
+      + `${questInfo.villageRefreshesUsed}/${questInfo.villageNumRefreshes} refreshes used.`);
     infoRow.id = 'questExplanation';
     if(questTable.parentElement.lastChild.id !== 'questExplanation') {
       questTable.parentElement.appendChild(infoRow);
@@ -160,17 +160,17 @@ async function handleVillageQuest(mutation) {
 
 
 /*** ELEMENT CREATION ***/
-async function getQuestInfoElem(actionsNeeded) {
+async function getQuestInfoElem(actionsNeeded, questInfo) {
   /**
    * Returns the info row used for active personal quest page
    */
-  const partyActions = await this.getPartyActions();
+  const partyActions = await getPartyActions(gameData, questInfo.playerId);
   let row = document.createElement('tr');
 
   const date = new Date();
   //actionsNeeded * 6000 = actions * 6 sec per action * 1000 milliseconds
   const finishPartyTime = new Date(date.getTime() + (actionsNeeded + partyActions) * 6000).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
-  const info = ['',`${this.quest.refreshesUsed}/${this.quest.numRefreshes} refreshes used`, '',
+  const info = ['',`${questInfo.refreshesUsed}/${questInfo.numRefreshes} refreshes used`, '',
     actionsNeeded >= 0 ? `End time (local time) with ${partyActions} party actions: ${finishPartyTime}`: ''];
   let htmlInfo = '';
   for (let text of info) {
@@ -181,7 +181,7 @@ async function getQuestInfoElem(actionsNeeded) {
   return row;
 }
 
-function getTimeElem(actionsNeeded, className, isVillage=true) {
+function getTimeElem(actionsNeeded, className, numPeople=1) {
   /**
    * Returns an element used to describe the end time for each quest, used for
    * the end time column. It has styled CSS through the className, and the
@@ -192,7 +192,6 @@ function getTimeElem(actionsNeeded, className, isVillage=true) {
 
   if(actionsNeeded > 0) {
     const date = new Date();
-    const numPeople = isVillage ? this.quest.villageSize : 1;
     //actionsNeeded * 6 sec per action * 1000 milliseconds / numPeople
     const finishTime = new Date(date.getTime() + actionsNeeded * 6000 / numPeople).toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
     cell.innerText = finishTime;
@@ -203,15 +202,15 @@ function getTimeElem(actionsNeeded, className, isVillage=true) {
   return cell;
 }
 
-function getQuestRatioInfo() {
+function getQuestRatioInfo(quest) {
   //Return info row used for inactive personal quests
   let row = document.createElement('tr');
-  const stat = this.getStatReward();
-  const avg = (stat.max/this.quest.minActions + stat.min/this.quest.maxActions) / 2;
+  const stat = getStatReward(quest);
+  const avg = (stat.max/quest.minActions + stat.min/quest.maxActions) / 2;
   const info = ['Possible stat ratios, considering quests completed & village bold:',
-  `Worst ratio: ${(stat.min/this.quest.maxActions).toFixed(3)}`,
+  `Worst ratio: ${(stat.min/quest.maxActions).toFixed(3)}`,
   `Avg ratio: ${(avg).toFixed(3)}`,
-  `Best Ratio: ${(stat.max/this.quest.minActions).toFixed(3)}`,
+  `Best Ratio: ${(stat.max/quest.minActions).toFixed(3)}`,
     ''
   ];
   let htmlInfo = '';
@@ -240,7 +239,7 @@ function addEndTimeColumn(tableElem) {
   }
 }
 
-async function insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
+async function insertEndTimeElem(tableBody, questInfo, isVillage, isActiveQuest, strActions=0) {
   /* Returns info row because I suck at structure 
   ** Also inserts the end time for each quest 
   */
@@ -262,7 +261,7 @@ async function insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
       } else {
         actionsNeeded = objective - actionsDone;
       }
-      timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, isVillage);
+      timeElem = getTimeElem(actionsNeeded, row.firstChild.className, isVillage ? questInfo.villageSize : 1);
       row.appendChild(timeElem);
       
       //Add ratios
@@ -274,27 +273,27 @@ async function insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
         row.children[2].innerText = `${row.children[2].innerText} (${ratio})`;
       }
       
-      return await this.getQuestInfoElem(actionsNeeded);
+      return await getQuestInfoElem(actionsNeeded, questInfo);
       
     } else if(objectiveElemText[3].toLowerCase() === 'base') { //Special case: Exp reward quest
       const goldCollected = parseInt(objectiveElemText[0]);
       const objective = parseInt(objectiveElemText[2]);
-      const currentMonster = this.gameData.playerActionService.selectedMonster;
+      const currentMonster = gameData.playerActionService.selectedMonster;
       const baseGoldPerAction = 8 + 2 * currentMonster;
       const actionsNeeded = Math.ceil((objective - goldCollected) / baseGoldPerAction);
-      timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, isVillage);
+      timeElem = getTimeElem(actionsNeeded, row.firstChild.className, isVillage ? questInfo.villageSize : 1);
       row.appendChild(timeElem);
       
       //Add ratio
       const reward = row.children[2].innerText.split(' ')[0].replace(/,/g, '');
       const ratio = Math.round(parseInt(reward) / actionsNeeded).toLocaleString();
       row.children[2].innerText = `${row.children[2].innerText} (${ratio} exp/action)`;
-      return await this.getQuestInfoElem(actionsNeeded);
+      return await getQuestInfoElem(actionsNeeded, questInfo);
 
     } else {
-      timeElem = this.getTimeElem(-1, row.firstChild.className, isVillage);
+      timeElem = getTimeElem(-1, row.firstChild.className);
       row.appendChild(timeElem);
-      return await this.getQuestInfoElem(-1);
+      return await getQuestInfoElem(-1, questInfo);
     }
 
 
@@ -308,14 +307,14 @@ async function insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
       if(objectiveText[1] === 'actions') {
         //Add border if there's a str point reward
         const reward = row.children[2].innerText.split(' ')[1];
-        if(reward === 'strength' && parseInt(objectiveText[0]) <= this.settings.strActions) {
+        if(reward === 'strength' && parseInt(objectiveText[0]) <= strActions) {
           row.children[2].style.border = 'inset';
         }
         //Insert end time
         const objective = parseInt(objectiveText[0]);
-        timeElem = this.getTimeElem(objective, row.firstChild.className, true);
+        timeElem = getTimeElem(objective, row.firstChild.className, true, questInfo.villageSize);
       } else {
-        timeElem = this.getTimeElem(-1, row.firstChild.className, true);
+        timeElem = getTimeElem(-1, row.firstChild.className, true);
       }
       row.appendChild(timeElem);
     }
@@ -323,7 +322,7 @@ async function insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
 
 
   } else if(tableBody.children[0]) { //personal not active quests
-    const availableQuests = this.gameData.playerQuestService.questArray;
+    const availableQuests = gameData.playerQuestService.questArray;
 
     //Go through each quest and update row accordingly
     for(let i = 0; i < availableQuests.length; i++) {
@@ -348,7 +347,7 @@ async function insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
 
       } else if(availableQuests[i].type === 'friend') { //Base gold objective
         const goldObjective = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
-        const currentMonster = this.gameData.playerActionService.selectedMonster;
+        const currentMonster = gameData.playerActionService.selectedMonster;
         actionsNeeded = Math.ceil(goldObjective / (8 + 2 * currentMonster));
         //Insert a exp ratio
         const reward = parseInt(row.children[1].innerText.split(' ')[0].replace(/,/g, ''));
@@ -356,48 +355,10 @@ async function insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
         row.children[1].innerText = `${row.children[1].innerText} (${ratio} exp/action)`;
       } 
       if(row.id !== 'questInfoRow'){
-        const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
+        const timeElem = getTimeElem(actionsNeeded, row.firstChild.className, false);
         row.appendChild(timeElem);
       }
     }
-    return this.getQuestRatioInfo(); //The bottom row that contains extra info
+    return getQuestRatioInfo(questInfo); //The bottom row that contains extra info
   }
-}
-
-async function insertVillageSettingsElem() {
-  /**
-   * Inserts a custom settings box into the village settings page
-   */
-  //Get settings page contents
-  let settingsOverview = document.querySelector('app-village-settings');
-  while(!settingsOverview) {
-    await new Promise(resolve => setTimeout(resolve, 50));
-    settingsOverview = document.querySelector('app-village-settings');
-  }
-
-  //Clone a copy of the armory settings to match the css style
-  const questSettings = settingsOverview.firstChild.children[1].cloneNode(true);
-  //Modify to our liking
-  questSettings.firstChild.children[3].remove();
-  questSettings.firstChild.children[2].remove();
-  questSettings.firstChild.firstChild.innerText = 'QuesBS Highlight Quest';
-  questSettings.firstChild.children[1].firstChild.innerText = 'Max actions for strength point';
-  questSettings.firstChild.children[1].children[1].id = 'actionsLimitSetting';
-  questSettings.firstChild.children[1].children[1].style.width = '50%';
-  questSettings.firstChild.children[1].children[1].firstChild.value = this.settings.strActions;
-  questSettings.firstChild.children[1].children[1].firstChild.style.width = '6em';
-  questSettings.firstChild.children[2].firstChild.firstChild.innerText = 'Save QuesBS Quests';
-  //Add a save function for button
-  questSettings.firstChild.children[2].firstChild.onclick = () => {
-    const newActions = parseInt(document.getElementById('actionsLimitSetting').firstChild.value);
-    //Data validation
-    if(isNaN(newActions)) {
-      this.gameData.snackbarService.openSnackbar('Error: Value should be a number'); //feedback popup
-    } else {
-      this.settings.strActions = newActions;
-      localStorage.setItem('QuesBS_settings', JSON.stringify(this.settings));
-      this.gameData.snackbarService.openSnackbar('Settings saved successfully'); //feedback popup
-    }
-  }
-  settingsOverview.appendChild(questSettings);
 }
