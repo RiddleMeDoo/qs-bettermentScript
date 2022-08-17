@@ -6,7 +6,7 @@
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @grant        none
-// @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/quests_0_4.js
+// @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/quests_0_6.js
 // ==/UserScript==
 
 class Script {
@@ -38,6 +38,15 @@ class Script {
   }
 
   async initQuestData(gameData) {
+    //Couldn't find an easier method to get quest completions than a POST request
+    gameData.httpClient.post('/player/load/misc', {}).subscribe(
+      val => {
+        this.quest.questsCompleted = val.playerMiscData.quests_completed;
+        this.quest.playerId = val.playerMiscData.player_id;
+      },
+      response => console.log('QuesBS: POST request failure', response)
+    );
+
     const questData = await updateQuestData(gameData);
     this.quest = {...this.quest, questData};
   }

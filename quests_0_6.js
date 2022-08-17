@@ -2,37 +2,25 @@ async function updateQuestData(gameData) {
   /**
    * A function to be called when the game loads in
   **/
-  const refreshData = await getPlayerRefreshes(gameData);
-  let quest = {};
-  //Couldn't find an easier method to get quest completions than a POST request
-  return gameData.httpClient.post('/player/load/misc', {}).subscribe(
-    val => {
-      quest.questsCompleted = val.playerMiscData.quests_completed;
-      quest.playerId = val.playerMiscData.player_id;
-    },
-    response => console.log('QuesBS: POST request failure', response),
-    async () => { // Finally
-      quest = {...quest, ...refreshData};
+  const quest = await getPlayerRefreshes(gameData);
     
-      let villageService = gameData.playerVillageService;
-      //Wait for service to load
-      while(villageService === undefined) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        villageService = gameData.playerVillageService;
-      }
-      
-      if(villageService?.isInVillage === true) {
-        quest.villageSize = villageService.general.members.length;
-        quest.villageBold = villageService.strengths.bold.amount;
-        quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
-        quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
-      }
-      //Can't be bothered to calculate it accurately using all 4 stats
-      quest.baseStat = Math.min(15, gameData.playerStatsService?.strength * 0.0025);
-      
-      return quest;
-    }
-  );
+  let villageService = gameData.playerVillageService;
+  //Wait for service to load
+  while(villageService === undefined) {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    villageService = gameData.playerVillageService;
+  }
+  
+  if(villageService?.isInVillage === true) {
+    quest.villageSize = villageService.general.members.length;
+    quest.villageBold = villageService.strengths.bold.amount;
+    quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
+    quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
+  }
+  //Can't be bothered to calculate it accurately using all 4 stats
+  quest.baseStat = Math.min(15, gameData.playerStatsService?.strength * 0.0025);
+  
+  return quest;
 }
 
 async function getPartyActions(gameData, playerId) {
