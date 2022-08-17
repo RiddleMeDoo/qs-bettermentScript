@@ -1,16 +1,17 @@
 async function updateQuestData(gameData) {
-  // A function to be called when the game loads in
+  /**
+   * A function to be called when the game loads in
+  **/
+  const refreshData = await getPlayerRefreshes(gameData);
   let quest = {};
   //Couldn't find an easier method to get quest completions than a POST request
   gameData.httpClient.post('/player/load/misc', {}).subscribe(
     val => {
-      quest.questsCompleted = val.playerMiscData.quests_completed;
-      quest.playerId = val.playerMiscData.player_id;
       quest = {
         questsCompleted: val.playerMiscData.quests_completed,
         playerId: val.playerMiscData.player_id,
-        ...await getPlayerRefreshes(gameData, quest)
-      }
+        ...refreshData
+      };
     },
     response => console.log('QuesBS: POST request failure', response)
   );
