@@ -6,11 +6,14 @@ async function updateQuestData(gameData) {
     val => {
       quest.questsCompleted = val.playerMiscData.quests_completed;
       quest.playerId = val.playerMiscData.player_id;
+      quest = {
+        questsCompleted: val.playerMiscData.quests_completed,
+        playerId: val.playerMiscData.player_id,
+        ...await getPlayerRefreshes(gameData, quest)
+      }
     },
     response => console.log('QuesBS: POST request failure', response)
   );
-
-  quest = {...quest, ...await getPlayerRefreshes(gameData, quest)};
 
   if(gameData.playerVillageService?.isInVillage === true) {
     let villageService = gameData.playerVillageService;

@@ -6,7 +6,7 @@
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @grant        none
-// @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/quests_0_1.js
+// @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/quests_0_2.js
 // ==/UserScript==
 
 class Script {
