@@ -11,7 +11,7 @@ async function updateQuestData(gameData) {
       quest.playerId = val.playerMiscData.player_id;
     },
     response => console.log('QuesBS: POST request failure', response),
-    () => { // Finally
+    async () => { // Finally
       quest = {...quest, ...refreshData};
     
       let villageService = gameData.playerVillageService;
@@ -317,9 +317,9 @@ async function insertEndTimeElem(tableBody, questInfo, isVillage, isActiveQuest,
         }
         //Insert end time
         const objective = parseInt(objectiveText[0]);
-        timeElem = getTimeElem(objective, row.firstChild.className, true, questInfo.villageSize);
+        timeElem = getTimeElem(objective, row.firstChild.className, questInfo.villageSize);
       } else {
-        timeElem = getTimeElem(-1, row.firstChild.className, true);
+        timeElem = getTimeElem(-1, row.firstChild.className);
       }
       row.appendChild(timeElem);
     }
@@ -360,7 +360,7 @@ async function insertEndTimeElem(tableBody, questInfo, isVillage, isActiveQuest,
         row.children[1].innerText = `${row.children[1].innerText} (${ratio} exp/action)`;
       } 
       if(row.id !== 'questInfoRow'){
-        const timeElem = getTimeElem(actionsNeeded, row.firstChild.className, false);
+        const timeElem = getTimeElem(actionsNeeded, row.firstChild.className);
         row.appendChild(timeElem);
       }
     }
