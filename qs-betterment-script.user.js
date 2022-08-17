@@ -185,11 +185,11 @@ class Script {
       const newActions = parseInt(document.getElementById('actionsLimitSetting').firstChild.value);
       //Data validation
       if(isNaN(newActions)) {
-        this.gameData.snackbarService.openSnackbar('Error: Value should be a number'); //feedback popup
+        gameData.snackbarService.openSnackbar('Error: Value should be a number'); //feedback popup
       } else {
         this.settings.strActions = newActions;
         localStorage.setItem('QuesBS_settings', JSON.stringify(this.settings));
-        this.gameData.snackbarService.openSnackbar('Settings saved successfully'); //feedback popup
+        gameData.snackbarService.openSnackbar('Settings saved successfully'); //feedback popup
       }
     }
     settingsOverview.appendChild(questSettings);

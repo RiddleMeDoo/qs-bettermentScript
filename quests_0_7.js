@@ -44,7 +44,7 @@ async function getPlayerRefreshes(gameData) {
   };
 }
 
-async function getVillageRefreshes(gameData) {
+async function getVillageRefreshes() {
   let villageService = gameData.playerVillageService;
   return {
     villageNumRefreshes: villageService.general.dailyQuestsBought + 5,
