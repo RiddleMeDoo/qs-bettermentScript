@@ -6,7 +6,7 @@
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @grant        none
-// @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/quests_0_6.js
+// @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/quests_0_7.js
 // ==/UserScript==
 
 class Script {
@@ -65,7 +65,7 @@ class Script {
       handlePersonalQuest(mutationsList[0], scriptObject.quest);
     });
     this.villageQuestObserver = new MutationObserver(mutationsList => {
-      handleVillageQuest(mutationsList[0], scriptObject.quest);
+      handleVillageQuest(mutationsList[0], scriptObject.quest, scriptObject.settings.strActions);
     });
     this.catacombObserver = new MutationObserver(mutationsList => {
       scriptObject.handleCatacombPage(mutationsList[0]);
@@ -130,7 +130,7 @@ class Script {
         childList: true, subtree: true, attributes: false,
       });
       //Sometimes there is no change observed for the initial page load, so call function
-      await handleVillageQuest({target: target});
+      await handleVillageQuest({target: target}, this.quest, this.settings.strActions);
 
     } else if(path[path.length - 1].toLowerCase() === 'settings' && path[0].toLowerCase() === 'village') {
       //const target = document.querySelector('app-village-settings').firstChild;
