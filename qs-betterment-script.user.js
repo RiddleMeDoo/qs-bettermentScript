@@ -6,8 +6,52 @@
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @grant        none
-// @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/quests_0_7.js
+// @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/quests_1_0.js
 // ==/UserScript==
+
+async function getCatacombData() {
+  /***
+   * Returns Observatory boost, action timer in seconds
+  ***/
+  // Wait until services load
+  while(gameData?.playerCatacombService === undefined || gameData?.playerVillageService === undefined) {
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+  const tomes = gameData.playerCatacombService.calculateTomeOverview();
+  const villageService = gameData.playerVillageService;
+
+  let villageActionSpeedBoost;
+  if (villageService?.isInVillage === true) {
+    const level = villageService?.buildings?.observatory?.amount ?? 0;
+    villageActionSpeedBoost = (Math.floor(level / 20) * Math.floor(level / 20 + 1) / 2 * 20 + (level % 20) * Math.floor(level / 20 + 1)) / 100;
+  } else {
+    villageActionSpeedBoost = 0;
+  }
+
+  return {
+    villageActionSpeed: villageActionSpeedBoost,
+    actionTimerSeconds: 24 / (1 + villageActionSpeedBoost + tomes.speed / 100) 
+  }
+} 
+
+function handleCatacombPage(mutation, catacombInfo) {
+  if(
+    mutation?.addedNodes?.[0]?.localName === 'mat-tooltip-component' ||
+    mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
+    mutation?.addedNodes?.[0]?.nodeName === '#text'
+  ) {
+    return;
+  }
+  // Inactive view
+  const parentElement = document.querySelector('app-catacomb-main').firstChild.children[1].firstChild.firstChild;
+  const totalMobs = parseInt(parentElement.firstChild.children[1].firstChild.children[11].children[1].innerText);
+  const toInsertIntoEle = parentElement.children[1];
+  
+  // Create the end time ele to insert into
+  const endTimeEle = document.createElement('div');
+  endTimeEle.id = 'catacombEndTime';
+  return;
+}
 
 class Script {
   constructor() {
@@ -48,11 +92,11 @@ class Script {
     );
 
     const questData = await updateQuestData(gameData);
-    this.quest = {...this.quest, questData};
+    this.quest = {...this.quest, ...questData};
   }
 
-  async initCatacombData(gameData) {
-    return;
+  async initCatacombData() {
+    this.catacomb = await getCatacombData();
   }
 
   initObservers() {
@@ -68,7 +112,7 @@ class Script {
       handleVillageQuest(mutationsList[0], scriptObject.quest, scriptObject.settings.strActions);
     });
     this.catacombObserver = new MutationObserver(mutationsList => {
-      scriptObject.handleCatacombPage(mutationsList[0]);
+      handleCatacombPage(mutationsList[0], scriptObject.catacomb);
     });
   }
 
@@ -141,10 +185,19 @@ class Script {
       while(!target) {
         await new Promise(resolve => setTimeout(resolve, 200))
         target = document.querySelector('app-catacomb-main').firstChild;
+        if (target.nodeName === '#comment') {
+          // Then it's an active catacomb, only listen for change in active/inactive state
+          this.catacombObserver.observe(target.parentElement, {
+            childList: true, subtree: false, attributes: false,
+          });
+          
+        } else {
+          this.catacombObserver.observe(target, {
+            childList: true, subtree: true, attributes: false,
+          });
+        }
       }
-      this.catacombObserver.observe(target, {
-        childList: true, subtree: true, attributes: false,
-      });
+      
     }
   }
 
@@ -230,6 +283,7 @@ async function setupScript() {
     clearInterval(QuesBSLoader);
     await QuesBS.initPathDetection();
     await QuesBS.initQuestData(gameData);
+    await QuesBS.initCatacombData();
   } else if(QuesBS) {
     console.log('QuesBS: The script has already been loaded.');
     clearInterval(QuesBSLoader);

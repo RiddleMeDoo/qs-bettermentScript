@@ -129,6 +129,7 @@ async function handleVillageQuest(mutation, questInfo, strActionsSetting) {
 
   if(questTable) {
     const villageRefreshes = await getVillageRefreshes(); //Update for refreshes used
+    questInfo.villageRefreshesUsed = villageRefreshes.villageRefreshesUsed;
     addEndTimeColumn(questTable);
 
     //Add end time
@@ -136,9 +137,9 @@ async function handleVillageQuest(mutation, questInfo, strActionsSetting) {
 
     //Add end time elems to the end time column
     if(tableBody.children.length > 2) { //Quest is not active
-      await insertEndTimeElem(tableBody, {...questInfo, ...villageRefreshes}, true, false, strActionsSetting);
+      await insertEndTimeElem(tableBody, {...questInfo}, true, false, strActionsSetting);
     } else { //Quest is active
-      await insertEndTimeElem(tableBody, {...questInfo, ...villageRefreshes}, true, true, strActionsSetting);
+      await insertEndTimeElem(tableBody, {...questInfo}, true, true, strActionsSetting);
     }
 
     //Add info text at the bottom of quest table
