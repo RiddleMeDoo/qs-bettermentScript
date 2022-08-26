@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.5
+// @version      1.5.0
 // @description  A script that lets you know info about quests and more!
 // @author       RiddleMeDoo
 // @include      *queslar.com*
