@@ -38,7 +38,7 @@ class Script {
     this.currentPath = window.location.hash.split('/').splice(2).join();
   }
 
-  async initQuestData(gameData) {
+  async initQuestData() {
     //Couldn't find an easier method to get quest completions than a POST request
     gameData.httpClient.post('/player/load/misc', {}).subscribe(
       val => {
@@ -97,7 +97,7 @@ class Script {
   async handlePathChange(url) {
     /**
      * Detects which page the player navigated to when the url path
-     * has changed, then activates the observer for the page. 
+     * has changed, then activates the observer for the page.
      */
     const path = url.split('/').slice(2);
     if(path.join() !== this.currentPath) {
@@ -154,7 +154,7 @@ class Script {
         // Get updated catacomb data before handing it off
         this.catacomb = await getCatacombData();
         handleCatacombPage({target: target}, this.catacomb);
-        
+
       } else {
         this.catacombObserver.observe(target, {
           childList: true, subtree: true, attributes: false,
@@ -171,7 +171,7 @@ class Script {
     }
     if(stop[pathname]) stop[pathname]();
   }
-  
+
   async insertVillageSettingsElem() {
     /**
      * Inserts a custom settings box into the village settings page
@@ -211,17 +211,19 @@ class Script {
   }
 }
 
-async function getGameData(numAttempts) { //ULTIMATE POWER
+async function getGameData() { //ULTIMATE POWER
   //Get a reference to *all* the data the game is using to run
-  let gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
-  while(gameData === undefined && numAttempts > 0) { //Power comes with a price; wait for it to load
-    await new Promise(resolve => setTimeout(resolve, 500))
-    gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
-    numAttempts--;
-  }
-  if (!gameData) console.log('QuesBS: Game Data could not be loaded. The script will not work without it. Please refresh the page and try again.');
+  gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
 
-  return gameData;
+  if(!gameData) gameDataAttempts--;
+
+  if (gameDataAttempts <= 0) {
+    console.log('QuesBS: Game Data could not be loaded. The script will not work without it. Please refresh the page and try again.');
+    clearInterval(gameDataLoader);
+  } else if (gameData !== null) {
+    clearInterval(gameDataLoader);
+  }
+
 }
 
 
@@ -230,21 +232,23 @@ var QuesBS = null;
 console.log('QuesBS: Init load');
 let QuesBSLoader = null;
 let numAttempts = 30;
-const gameData = await getGameData(600);
+let gameDataAttempts = 180;
+var gameData = null;
 QuesBSLoader = setInterval(setupScript, 3000);
+const gameDataLoader = setInterval(getGameData, 500);
 
 window.startQuesBS = () => { // If script doesn't start, call this function (ie. startQuesBS() in the console)
   QuesBSLoader = setInterval(setupScript, 3000);
 }
 
 async function setupScript() {
-  if(document.getElementById('profile-next-level') && QuesBS === null) {
+  if(document.getElementById('profile-next-level') && QuesBS === null && gameData !== null) {
     QuesBS = new Script();
     console.log('QuesBS: The script has been loaded.');
 
     clearInterval(QuesBSLoader);
     await QuesBS.initPathDetection();
-    await QuesBS.initQuestData(gameData);
+    await QuesBS.initQuestData();
     await QuesBS.initCatacombData();
   } else if(QuesBS) {
     console.log('QuesBS: The script has already been loaded.');
