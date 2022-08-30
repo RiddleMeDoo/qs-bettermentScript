@@ -19,7 +19,7 @@ async function getCatacombData() {
 
   return {
     villageActionSpeed: villageActionSpeedBoost,
-    actionTimerSeconds: 24 / (1 + villageActionSpeedBoost + tomes.speed / 100) 
+    actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100) 
   }
 } 
 

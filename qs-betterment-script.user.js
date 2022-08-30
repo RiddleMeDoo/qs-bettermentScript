@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.5.0
+// @version      1.5.1
 // @description  A script that lets you know info about quests and more!
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @grant        none
 // @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/quests_1_0.js
-// @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/catacombs_1_0.js
+// @require      https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/catacombs_1_1.js
 // ==/UserScript==
 
 class Script {
@@ -30,7 +30,7 @@ class Script {
     }
     this.catacomb = {
       villageActionSpeed: 0,
-      actionTimerSeconds: 24,
+      actionTimerSeconds: 30,
     }
 
     //observer setup

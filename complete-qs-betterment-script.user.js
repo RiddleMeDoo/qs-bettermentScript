@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.5.0
+// @version      1.5.1
 // @description  A script that lets you know info about quests and more! This version has all of the code in one file.
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -391,7 +391,7 @@ async function getCatacombData() {
 
   return {
     villageActionSpeed: villageActionSpeedBoost,
-    actionTimerSeconds: 24 / (1 + villageActionSpeedBoost + tomes.speed / 100) 
+    actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100) 
   }
 } 
 
@@ -466,7 +466,7 @@ class Script {
     }
     this.catacomb = {
       villageActionSpeed: 0,
-      actionTimerSeconds: 24,
+      actionTimerSeconds: 30,
     }
 
     //observer setup
