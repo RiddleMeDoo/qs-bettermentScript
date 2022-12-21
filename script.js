@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.4.1.3
+// @version      1.5.1.1
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -26,6 +26,10 @@ class Script {
     this.settings = JSON.parse(localStorage.getItem('QuesBS_settings')) ?? {
       strActions: 30000
     }
+    this.catacomb = {
+      villageActionSpeed: 0,
+      actionTimerSeconds: 30,
+    }
     this.playerId;
     this.gameData;
 
@@ -43,20 +47,46 @@ class Script {
   }
 
   async getGameData() { //ULTIMATE POWER
+    let tries = 30;
     //Get a reference to *all* the data the game is using to run
-    this.gameData = getAllAngularRootElements()[0].children[1]['__ngContext__'][30]?.playerGeneralService;
-    while(this.gameData === undefined) { //Power comes with a price; wait for it to load
+    this.gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
+    while(this.gameData === undefined && tries > 0) { //Power comes with a price; wait for it to load
       await new Promise(resolve => setTimeout(resolve, 500))
-      this.gameData = getAllAngularRootElements()[0].children[1]['__ngContext__'][30]?.playerGeneralService;
+      this.gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
+      tries--;
+    }
+
+    if (tries <= 0) {
+      console.log('QuesBS: Could not load gameData.');
     }
   }
 
-  async updateQuestData() {
-    while(this.gameData === undefined) {
-      await this.getGameData();
-      //wait until gameData loads, it is important
+  async updateCatacombData() {
+    /***
+     * Returns Observatory boost, action timer in seconds
+    ***/
+    // Wait until services load
+    while(this.gameData?.playerCatacombService === undefined || this.gameData?.playerVillageService === undefined) {
       await new Promise(resolve => setTimeout(resolve, 200));
     }
+    const tomes = this.gameData.playerCatacombService.calculateTomeOverview();
+    const villageService = this.gameData.playerVillageService;
+  
+    let villageActionSpeedBoost;
+    if (villageService?.isInVillage === true) {
+      const level = villageService?.buildings?.observatory?.amount ?? 0;
+      villageActionSpeedBoost = (Math.floor(level / 20) * Math.floor(level / 20 + 1) / 2 * 20 + (level % 20) * Math.floor(level / 20 + 1)) / 100;
+    } else {
+      villageActionSpeedBoost = 0;
+    }
+    
+    this.catacomb = {
+      villageActionSpeed: villageActionSpeedBoost,
+      actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100),
+    }
+  } 
+
+  async updateQuestData() {
     //Couldn't find an easier method to get quest completions than a POST request
     this.gameData.httpClient.post('/player/load/misc', {}).subscribe(
       val => {
@@ -128,10 +158,13 @@ class Script {
     });
     this.villageQuestObserver = new MutationObserver(mutationsList => {
       scriptObject.handleVillageQuest(mutationsList[0]);
-    })
+    });
     this.eventQuestObserver = new MutationObserver(mutationsList => {
       scriptObject.handleEventQuest(mutationsList);
-    })
+    });
+    this.catacombObserver = new MutationObserver(mutationsList => {
+      this.handleCatacombPage(mutationsList[0]);
+    });
   }
 
 
@@ -141,11 +174,6 @@ class Script {
      * url path. This will allow us to determine which part of the
      * script to activate on each specific page.
      */
-     while(this.gameData === undefined) {
-      await this.getGameData();
-      //wait until gameData loads, it is important
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
     let router = this.gameData?.router
     //Wait for service to load
     while(router === undefined && router?.events === undefined) {
@@ -223,6 +251,30 @@ class Script {
       //Insert an end time if applicable
       this.insertPartnerEndTime(target.children[target.children.length - 1]);
       this.disableEventShop(target.nextElementSibling.children);
+
+      
+    } else if(path[path.length - 1].toLowerCase() === 'catacomb' && path[0].toLowerCase() === 'catacombs') {
+      let target = document.querySelector('app-catacomb-main')?.firstChild;
+      while(!target) {
+        await new Promise(resolve => setTimeout(resolve, 200))
+        target = document.querySelector('app-catacomb-main').firstChild;
+      }
+
+      if (target.nodeName === '#comment') { // Active catacomb page
+        // Only listen for change in active/inactive state
+        this.catacombObserver.observe(target.parentElement, {
+          childList: true, subtree: false, attributes: false,
+        });
+
+        // Get updated catacomb data before handing it off
+        this.updateCatacombData();  // ! This might cause some issues with concurrency 
+        this.handleCatacombPage({target: target});  
+
+      } else {
+        this.catacombObserver.observe(target, {
+          childList: true, subtree: true, attributes: false,
+        });
+      }
     }
   }
 
@@ -357,6 +409,50 @@ class Script {
       if(questTable.parentElement.lastChild.id !== 'questExplanation') {
         questTable.parentElement.appendChild(infoRow);
       }
+    }
+  }
+
+  async handleCatacombPage(mutation) {
+    /**
+     * Handle an update on the catacomb page, and insert an end time into the page
+     * for any selected catacomb.
+    **/
+    if ( // skip unnecessary updates 
+      mutation?.addedNodes?.[0]?.localName === 'mat-tooltip-component' ||
+      mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
+      mutation?.addedNodes?.[0]?.nodeName === '#text' ||
+      mutation?.addedNodes?.[0]?.id === 'catacombEndTime'
+    ) {
+      return;
+    }
+    const mainView = document.querySelector('app-catacomb-main');
+  
+    //Check if active or inactive view
+    if (mainView.firstChild.nodeName === '#comment') { // Active view
+      const parentElement = mainView.firstElementChild.firstChild.firstChild;
+      const mobText = parentElement.firstChild.firstChild.firstChild.children[1].innerText;
+      const totalMobs = parseInt(mobText.split(' ')[2].replace(/,/g, ''));
+      const mobsKilled = parseInt(mobText.split(' ')[0].replace(/,/g, ''));
+      const secondsLeft = parseInt(parentElement.children[1].innerText.replace(/,/g, ''));
+  
+      // Create the end time ele to insert into
+      const endTimeEle = document.getElementById('catacombEndTime') ?? document.createElement('div');
+      endTimeEle.id = 'catacombEndTime';
+      endTimeEle.setAttribute('class', 'h5');
+      endTimeEle.innerText = `| End time: ${getCatacombEndTime(totalMobs - mobsKilled, this.catacomb.actionTimerSeconds, secondsLeft)}`;
+  
+      parentElement.appendChild(endTimeEle);
+  
+    } else { // Inactive view
+      const parentElement = mainView.firstChild.children[1].firstChild.firstChild;
+      const totalMobs = parseInt(parentElement.firstChild.children[1].firstChild.children[11].children[1].innerText.replace(/,/g, ''));
+      const toInsertIntoEle = parentElement.children[1];
+      
+      // Create the end time ele to insert into
+      const endTimeEle = document.getElementById('catacombEndTime') ?? document.createElement('div');
+      endTimeEle.id = 'catacombEndTime';
+      endTimeEle.innerText = `End time (local): ${getCatacombEndTime(totalMobs, this.catacomb.actionTimerSeconds)}`;
+      toInsertIntoEle.appendChild(endTimeEle);
     }
   }
 
@@ -621,6 +717,17 @@ class Script {
   }
 }
 
+// ----------------------------------------------------------------------------
+// Helper functions
+
+function getCatacombEndTime(numMobs, actionTimerSeconds, extraSeconds=0) {
+  const current = new Date();
+  const finishTime = new Date(current.getTime() + (numMobs * actionTimerSeconds + extraSeconds) * 1000)
+                              .toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
+  return finishTime;
+}
+
+// ----------------------------------------------------------------------------
 
 // This is where the script starts
 var QuesBS = null;
@@ -638,20 +745,33 @@ window.startQuesBS = () => { // If script doesn't start, call this function (ie.
   QuesBSLoader = setInterval(setupScript, 3000);
 }
 
-async function setupScript() {
-  if(document.getElementById('profile-next-level') && QuesBS === null) {
+window.restartQuestBS = () => { // Try to reload the game data for the script
+  QuesBSLoader = setInterval(async () => {
+    if (QuesBS.gameData === undefined) {
+      await QuesBS.getGameData();
+    } else {
+      clearInterval(QuesBSLoader);
+      console.log('QuesBS: Script has been reloaded.')
+    }
+  }, 3000);
+ }
+
+ async function setupScript() {
+  if(QuesBS === null) {
     QuesBS = new Script();
+    await QuesBS?.getGameData();
+  }
+
+  if(QuesBS !== null && QuesBS.gameData !== undefined) {
     console.log('QuesBS: The script has been loaded.');
 
     clearInterval(QuesBSLoader);
-    await QuesBS.getGameData();
     await QuesBS.initPathDetection();
     await QuesBS.updateQuestData();
+    await QuesBS.updateCatacombData();
     window.playAudio = () => QuesBS.playAudio();
-  } else if(QuesBS) {
-    console.log('QuesBS: The script has already been loaded.');
-    clearInterval(QuesBSLoader);
   } else {
+    await QuesBS?.getGameData();
     console.log('QuesBS: Loading failed. Trying again...');
     numAttempts--;
     if(numAttempts <= 0) {
