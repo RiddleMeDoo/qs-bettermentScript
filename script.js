@@ -736,11 +736,6 @@ let QuesBSLoader = null;
 let numAttempts = 30;
 QuesBSLoader = setInterval(setupScript, 3000);
 
-/*
-window.addEventListener('load', () => { //Load the page first before setting up the script
-  QuesBSLoader = setInterval(setupScript, 3000);
-});
-*/
 window.startQuesBS = () => { // If script doesn't start, call this function (ie. startQuesBS() in the console)
   QuesBSLoader = setInterval(setupScript, 3000);
 }
@@ -769,7 +764,6 @@ window.restartQuestBS = () => { // Try to reload the game data for the script
     await QuesBS.initPathDetection();
     await QuesBS.updateQuestData();
     await QuesBS.updateCatacombData();
-    window.playAudio = () => QuesBS.playAudio();
   } else {
     await QuesBS?.getGameData();
     console.log('QuesBS: Loading failed. Trying again...');
