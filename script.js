@@ -238,10 +238,10 @@ class Script {
     } else if(path[0].toLowerCase() === 'events' && path[1].toLowerCase() === 'quest') {
       if(path[path.length - 1].toLowerCase() === 'tournament-rankings') return;
 
-      let target = document.querySelector('app-event-quest-overview')?.firstChild?.children[1]?.children[2]?.firstChild;
+      let target = document.querySelector('app-event-quest-overview')?.firstChild?.children[1]?.children[1]?.firstChild;
       while(target === undefined || target === null) {
         await new Promise(resolve => setTimeout(resolve, 50));
-        target = document.querySelector('app-event-quest-overview')?.firstChild?.children[1]?.children[2]?.firstChild;
+        target = document.querySelector('app-event-quest-overview')?.firstChild?.children[1]?.children[1]?.firstChild;
       }
 
       this.eventQuestObserver.observe(target, {
