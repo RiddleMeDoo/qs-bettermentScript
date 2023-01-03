@@ -314,7 +314,7 @@ class Script {
       const dungeonsPerMin = this.dungeonAttempts / 60;
       if(dungeonsPerMin <= 0) {
         finishTime = 'Never';
-        numActions = 'Never';
+        numActions = 'No';
       } else {
         finishTime = new Date(date.getTime() + actionsLeft / dungeonsPerMin * 60 * 1000).toLocaleTimeString('en-GB');
         numActions = Math.ceil(actionsLeft / dungeonsPerMin * 60 / 6);
