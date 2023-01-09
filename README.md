@@ -3,7 +3,7 @@
 ## Installation process
 
 -   Install Tampermonkey or Greasemonkey extension on the browser.
--   Now, go to https://github.com/RiddleMeDoo/qs-bettermentScript/raw/master/qs-betterment-script.user.js
+-   Now, go to https://github.com/RiddleMeDoo/qs-bettermentScript/raw/master/complete-qs-betterment-script.user.js
 -   It should open a new tab. Install or update the script.
 -   Refresh the game and wait for the script to load. It should send a popup message when it has loaded.
 -   If the script doesn't load, try refreshing the page with ctrl+F5. If that doesn't work, enter startQuesBS() into the console for a manual start.
