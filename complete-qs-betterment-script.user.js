@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.5.2
+// @version      1.5.3
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -78,7 +78,7 @@ class Script {
     
     this.catacomb = {
       villageActionSpeed: villageActionSpeedBoost,
-      actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100),
+      actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100) / Math.max(1, 1 + tomes.multi_mob / 100),
     }
   } 
 
