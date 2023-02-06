@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.5.3
+// @version      1.5.4
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
-// @grant        none
+// @grant        GM_addStyle
+// @grant        GM_getResourceText
 // ==/UserScript==
 
 class Script {
@@ -149,6 +150,9 @@ class Script {
     this.catacombObserver = new MutationObserver(mutationsList => {
       this.handleCatacombPage(mutationsList[0]);
     });
+    this.tomeObserver = new MutationObserver(mutationsList => {
+      this.handleCatacombTomeStore(mutationsList[0]);
+    });
   }
 
 
@@ -232,14 +236,27 @@ class Script {
         });
 
         // Get updated catacomb data before handing it off
-        this.updateCatacombData();  // ! This might cause some issues with concurrency 
+        this.updateCatacombData(); // ! This might cause some issues with concurrency 
         this.handleCatacombPage({target: target});  
 
       } else {
+        // Get updated catacomb data before handing it off
+        this.updateCatacombData(); // ! This might cause some issues with concurrency 
         this.catacombObserver.observe(target, {
           childList: true, subtree: true, attributes: false,
         });
       }
+    } else if(path[path.length - 1].toLowerCase() === 'tome_store' && path[0].toLowerCase() === 'catacombs') {
+      let target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
+      while(!target) {
+        await new Promise(resolve => setTimeout(resolve, 200))
+        target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
+      }
+
+      this.tomeObserver.observe(target, {
+        childList: true, subtree: false, attributes: false
+      });
+      this.handleCatacombTomeStore({target: target});
     }
   }
   
@@ -373,7 +390,55 @@ class Script {
       endTimeEle.id = 'catacombEndTime';
       endTimeEle.innerText = `End time (local): ${getCatacombEndTime(totalMobs, this.catacomb.actionTimerSeconds)}`;
       toInsertIntoEle.appendChild(endTimeEle);
+
+      // Create tooltips for gold/hr and emblems/hr
+      const goldEle = parentElement.firstChild.children[1].firstChild.children[9].children[1];
+      const emblemsEle = parentElement.firstChild.children[1].firstChild.children[10].children[1];
+      const goldHr = parseInt(goldEle.innerText.replace(/,/g, '')) / this.catacomb.actionTimerSeconds * 3600;
+      goldEle.setAttribute('title', `${goldHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
+      const emblemsHr = parseInt(emblemsEle.innerText.replace(/,/g, '')) / totalMobs / this.catacomb.actionTimerSeconds * 3600;
+      emblemsEle.setAttribute('title', `${emblemsHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
     }
+  }
+
+  async handleCatacombTomeStore(mutation) {
+    /**
+     * Add highlights around tomes with good boosts.
+     * 
+    **/
+    if ( // skip unnecessary updates 
+      mutation?.addedNodes?.[0]?.localName === 'mat-tooltip-component' ||
+      mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
+      mutation?.addedNodes?.[0]?.nodeName === '#text' 
+      // TODO: skip for tomes with an id added to it 
+    ) {
+      return;
+    }
+    const tomeElements = $$('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1 > div');
+    let tomes = this.gameData.playerCatacombService?.tomeStore;
+    while (this.gameData.playerCatacombService === undefined || tomes === undefined) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+      tomes = this.gameData.playerCatacombService?.tomeStore;
+    }
+    // For each tome (loop by index), check if tome has positive modifiers.
+    for (let i = 0; i < tomes.length; i++) {
+      const tomeMods = tomes[i];
+      if (tomeMods.reward_multiplier < 0 || tomeMods.mob_debuff < 0 || tomeMods.character_multiplier < 0 || 
+          tomeMods.lifesteal < 0 || tomeMods.speed < 0 || tomeMods.skip < 0 
+      ) { continue }
+
+      // Highlight positive modifiers
+      if (tomeMods.reward_multiplier > 0) {
+        // TODO: Continue here
+      }
+      if (tomeMods.mob_debuff > 0) {
+        // TODO: Continue here
+      }
+      if (tomeMods.character_multiplier > 0) {
+        // TODO: Continue here
+      }
+    }
+    // Put an id on the first tome of the store
   }
 
   stopObserver(pathname) {
