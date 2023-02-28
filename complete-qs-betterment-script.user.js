@@ -1,12 +1,15 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.5.4
+// @version      1.6.0
 // @description  A script that lets you know more info about quests
 // @author       RiddleMeDoo
 // @include      *queslar.com*
+// @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
+// @grant        GM_setValue
+// @grant        GM_getValue
 // ==/UserScript==
 
 class Script {
@@ -24,9 +27,14 @@ class Script {
       minActions: 360,
       maxActions: 580,
     };
-    this.settings = JSON.parse(localStorage.getItem('QuesBS_settings')) ?? {
-      strActions: 30000
-    }
+    this.villageSettings = GM_getValue('villageSettings', JSON.parse(localStorage.getItem('QuesBS_settings')) ?? {
+      strActions: 30000,
+    });
+    this.tomeSettings = GM_getValue('tomeSettings', {
+      highlightReward: 5500,
+      highlightMob: 5500,
+      highlightCharacter: 5500,
+    });
     this.catacomb = {
       villageActionSpeed: 0,
       actionTimerSeconds: 30,
@@ -68,7 +76,7 @@ class Script {
     }
     const tomes = this.gameData.playerCatacombService.calculateTomeOverview();
     const villageService = this.gameData.playerVillageService;
-  
+
     let villageActionSpeedBoost;
     if (villageService?.isInVillage === true) {
       const level = villageService?.buildings?.observatory?.amount ?? 0;
@@ -76,12 +84,12 @@ class Script {
     } else {
       villageActionSpeedBoost = 0;
     }
-    
+
     this.catacomb = {
       villageActionSpeed: villageActionSpeedBoost,
       actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100) / Math.max(1, 1 + tomes.multi_mob / 100),
     }
-  } 
+  }
 
   async updateQuestData() {
     //Couldn't find an easier method to get quest completions than a POST request
@@ -236,30 +244,30 @@ class Script {
         });
 
         // Get updated catacomb data before handing it off
-        this.updateCatacombData(); // ! This might cause some issues with concurrency 
-        this.handleCatacombPage({target: target});  
+        this.updateCatacombData(); // ! This might cause some issues with concurrency
+        this.handleCatacombPage({target: target});
 
       } else {
         // Get updated catacomb data before handing it off
-        this.updateCatacombData(); // ! This might cause some issues with concurrency 
+        this.updateCatacombData(); // ! This might cause some issues with concurrency
         this.catacombObserver.observe(target, {
           childList: true, subtree: true, attributes: false,
         });
       }
     } else if(path[path.length - 1].toLowerCase() === 'tome_store' && path[0].toLowerCase() === 'catacombs') {
       let target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
-      while(!target) {
+      while(target.length < 1) {
         await new Promise(resolve => setTimeout(resolve, 200))
         target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
       }
 
-      this.tomeObserver.observe(target, {
+      this.tomeObserver.observe(target[0], {
         childList: true, subtree: false, attributes: false
       });
-      this.handleCatacombTomeStore({target: target});
+      this.handleCatacombTomeStore({target: target[0]});
     }
   }
-  
+
 
   async handlePersonalQuest(mutation) {
     /**
@@ -354,7 +362,7 @@ class Script {
      * Handle an update on the catacomb page, and insert an end time into the page
      * for any selected catacomb.
     **/
-    if ( // skip unnecessary updates 
+    if ( // skip unnecessary updates
       mutation?.addedNodes?.[0]?.localName === 'mat-tooltip-component' ||
       mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
       mutation?.addedNodes?.[0]?.nodeName === '#text' ||
@@ -363,7 +371,7 @@ class Script {
       return;
     }
     const mainView = document.querySelector('app-catacomb-main');
-  
+
     //Check if active or inactive view
     if (mainView.firstChild.nodeName === '#comment') { // Active view
       const parentElement = mainView.firstElementChild.firstChild.firstChild;
@@ -371,20 +379,20 @@ class Script {
       const totalMobs = parseInt(mobText.split(' ')[2].replace(/,/g, ''));
       const mobsKilled = parseInt(mobText.split(' ')[0].replace(/,/g, ''));
       const secondsLeft = parseInt(parentElement.children[1].innerText.replace(/,/g, ''));
-  
+
       // Create the end time ele to insert into
       const endTimeEle = document.getElementById('catacombEndTime') ?? document.createElement('div');
       endTimeEle.id = 'catacombEndTime';
       endTimeEle.setAttribute('class', 'h5');
       endTimeEle.innerText = `| End time: ${getCatacombEndTime(totalMobs - mobsKilled, this.catacomb.actionTimerSeconds, secondsLeft)}`;
-  
+
       parentElement.appendChild(endTimeEle);
-  
+
     } else { // Inactive view
       const parentElement = mainView.firstChild.children[1].firstChild.firstChild;
       const totalMobs = parseInt(parentElement.firstChild.children[1].firstChild.children[11].children[1].innerText.replace(/,/g, ''));
       const toInsertIntoEle = parentElement.children[1];
-      
+
       // Create the end time ele to insert into
       const endTimeEle = document.getElementById('catacombEndTime') ?? document.createElement('div');
       endTimeEle.id = 'catacombEndTime';
@@ -395,50 +403,56 @@ class Script {
       const goldEle = parentElement.firstChild.children[1].firstChild.children[9].children[1];
       const emblemsEle = parentElement.firstChild.children[1].firstChild.children[10].children[1];
       const goldHr = parseInt(goldEle.innerText.replace(/,/g, '')) / this.catacomb.actionTimerSeconds * 3600;
-      goldEle.setAttribute('title', `${goldHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
+      goldEle.parentElement.setAttribute('title', `${goldHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
       const emblemsHr = parseInt(emblemsEle.innerText.replace(/,/g, '')) / totalMobs / this.catacomb.actionTimerSeconds * 3600;
-      emblemsEle.setAttribute('title', `${emblemsHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
+      emblemsEle.parentElement.setAttribute('title', `${emblemsHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
     }
   }
 
   async handleCatacombTomeStore(mutation) {
     /**
      * Add highlights around tomes with good boosts.
-     * 
+     *
     **/
-    if ( // skip unnecessary updates 
+    if ( // skip unnecessary updates
       mutation?.addedNodes?.[0]?.localName === 'mat-tooltip-component' ||
       mutation?.addedNodes?.[0]?.className === 'mat-ripple-element' ||
-      mutation?.addedNodes?.[0]?.nodeName === '#text' 
-      // TODO: skip for tomes with an id added to it 
+      mutation?.addedNodes?.[0]?.nodeName === '#text' ||
+      mutation?.addedNodes?.[0]?.id === 'highlight'
     ) {
       return;
     }
-    const tomeElements = $$('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1 > div');
+    const tomeElements = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1 > div');
     let tomes = this.gameData.playerCatacombService?.tomeStore;
     while (this.gameData.playerCatacombService === undefined || tomes === undefined) {
       await new Promise(resolve => setTimeout(resolve, 200))
       tomes = this.gameData.playerCatacombService?.tomeStore;
     }
+    // Put an id on the first tome of the store
+    tomeElements[0].id = 'highlight';
+
     // For each tome (loop by index), check if tome has positive modifiers.
     for (let i = 0; i < tomes.length; i++) {
       const tomeMods = tomes[i];
-      if (tomeMods.reward_multiplier < 0 || tomeMods.mob_debuff < 0 || tomeMods.character_multiplier < 0 || 
-          tomeMods.lifesteal < 0 || tomeMods.speed < 0 || tomeMods.skip < 0 
+      if (tomeMods.reward_multiplier < 0 || tomeMods.mob_multiplier < 0 || tomeMods.character_multiplier < 0 ||
+          tomeMods.lifesteal < 0 || tomeMods.speed < 0
       ) { continue }
 
+      const tomeElement = tomeElements[i].firstChild;
       // Highlight positive modifiers
-      if (tomeMods.reward_multiplier > 0) {
-        // TODO: Continue here
+      if (tomeMods.reward_multiplier >= this.tomeSettings.highlightReward) {
+        const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward * 2;
+        tomeElement.children[3].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
       }
-      if (tomeMods.mob_debuff > 0) {
-        // TODO: Continue here
+      if (tomeMods.mob_multiplier > this.tomeSettings.highlightMob) {
+        const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob * 2;
+        tomeElement.children[4].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
       }
-      if (tomeMods.character_multiplier > 0) {
-        // TODO: Continue here
+      if (tomeMods.character_multiplier > this.tomeSettings.highlightCharacter) {
+        const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
+        tomeElement.children[5].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
       }
     }
-    // Put an id on the first tome of the store
   }
 
   stopObserver(pathname) {
@@ -607,7 +621,7 @@ class Script {
         if(objectiveText[1] === 'actions') {
           //Add border if there's a str point reward
           const reward = row.children[2].innerText.split(' ')[1];
-          if(reward === 'strength' && parseInt(objectiveText[0]) <= this.settings.strActions) {
+          if(reward === 'strength' && parseInt(objectiveText[0]) <= this.villageSettings.strActions) {
             row.children[2].style.border = 'inset';
           }
           //Insert end time
@@ -683,7 +697,7 @@ class Script {
     questSettings.firstChild.children[1].firstChild.innerText = 'Max actions for strength point';
     questSettings.firstChild.children[1].children[1].id = 'actionsLimitSetting';
     questSettings.firstChild.children[1].children[1].style.width = '50%';
-    questSettings.firstChild.children[1].children[1].firstChild.value = this.settings.strActions;
+    questSettings.firstChild.children[1].children[1].firstChild.value = this.villageSettings.strActions;
     questSettings.firstChild.children[1].children[1].firstChild.style.width = '6em';
     questSettings.firstChild.children[2].firstChild.firstChild.innerText = 'Save QuesBS Quests';
     //Add a save function for button
@@ -693,8 +707,8 @@ class Script {
       if(isNaN(newActions)) {
         this.gameData.snackbarService.openSnackbar('Error: Value should be a number'); //feedback popup
       } else {
-        this.settings.strActions = newActions;
-        localStorage.setItem('QuesBS_settings', JSON.stringify(this.settings));
+        this.villageSettings.strActions = newActions;
+        GM_setValue('villageSettings', this.villageSettings);
         this.gameData.snackbarService.openSnackbar('Settings saved successfully'); //feedback popup
       }
     }
