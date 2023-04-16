@@ -34,6 +34,10 @@ class Script {
       highlightMob: 10000,
       highlightCharacter: 10000,
       highlightElementalConv: 10000,
+      spaceLimitReward: 6,
+      spaceLimitMob: 6,
+      spaceLimitCharacter: 6,
+      spaceLimitElementalConv: 6,
     };
     this.catacomb = {
       villageActionSpeed: 0,
@@ -758,11 +762,30 @@ class Script {
     tomeStoreOverview.firstChild.appendChild(settings);
 
     // Set up buttons
-    openTomeSettingsbutton.onclick = () => {
-      document.querySelector('#tomeSettingsContainer').style.display = 'inline-grid';
+    openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
+      const container = document.querySelector('#tomeSettingsContainer');
+      if (container.style.display === 'none') {
+        container.style.display = 'inline-block';
+      } else {
+        container.style.display = 'none';
+      }
     };
-    document.querySelector('#tomeSettingsCancelButton').onclick = () => {
-      document.querySelector('#tomeSettingsContainer').style.display = 'none';
+    document.querySelector('#tomeSettingsSaveButton').onclick = () => {
+      // Get all of the values
+      const container = document.querySelector('#tomeSettingsContainer');
+      const tomeSettings = {
+        highlightReward: container.querySelector('#rewardHighlightSetting').valueAsNumber * 100,
+        highlightMob: container.querySelector('#mobHighlightSetting').valueAsNumber * 100,
+        highlightCharacter: container.querySelector('#characterHighlightSetting').valueAsNumber * 100,
+        spaceLimitReward: container.querySelector('#rewardSpaceSetting').valueAsNumber,
+        spaceLimitMob: container.querySelector('#mobSpaceSetting').valueAsNumber,
+        spaceLimitCharacter: container.querySelector('#characterSpaceSetting').valueAsNumber,
+      };
+      // Sanitize inputs
+      for (const [key, value] of Object.entries(tomeSettings)) {
+        this.tomeSettings[key] = isNaN(value) ? this.tomeSettings[key] : value;
+      }
+      localStorage.setItem('QuesBS_tomeSettings', JSON.stringify(this.tomeSettings));
     }
   }
 }
