@@ -8,8 +8,6 @@
 // @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
-// @grant        GM_setValue
-// @grant        GM_getValue
 // ==/UserScript==
 
 class Script {
@@ -27,14 +25,18 @@ class Script {
       minActions: 360,
       maxActions: 580,
     };
-    this.villageSettings = GM_getValue('villageSettings', JSON.parse(localStorage.getItem('QuesBS_settings')) ?? {
-      strActions: 30000,
-    });
-    this.tomeSettings = GM_getValue('tomeSettings', {
-      highlightReward: 5500,
-      highlightMob: 5500,
-      highlightCharacter: 5500,
-    });
+    this.villageSettings = JSON.parse(localStorage.getItem('QuesBS_villageSettings')) ?? {
+      strActions: 30000
+    };
+    this.tomeSettings = JSON.parse(localStorage.getItem('QuesBS_tomeSettings')) ?? {
+      highlightReward: 10000,
+      highlightMob: 10000,
+      highlightCharacter: 10000,
+      highlightElementalConv: 10000,
+      rewardColor: 'gold',
+      mobColor: 'white',
+      characterColor: '#ffffff',
+    };
     this.catacomb = {
       villageActionSpeed: 0,
       actionTimerSeconds: 30,
@@ -87,7 +89,7 @@ class Script {
 
     this.catacomb = {
       villageActionSpeed: villageActionSpeedBoost,
-      actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100) / Math.max(1, 1 + tomes.multi_mob / 100),
+      actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100),
     }
   }
 
@@ -434,23 +436,41 @@ class Script {
     // For each tome (loop by index), check if tome has positive modifiers.
     for (let i = 0; i < tomes.length; i++) {
       const tomeMods = tomes[i];
+      const tomeElement = tomeElements[i].firstChild;
+
+      // Check ele conversion highlighting requirements
+      if (tomeMods.space_requirement < 4 && tomeMods.elemental_conversion > this.tomeSettings.highlightElementalConv && tomeMods.character_multiplier >= 0) {
+        const isDouble = tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv * 2;
+        tomeElement.children[11].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
+        if (tomeMods.character_multiplier > this.tomeSettings.highlightCharacter) {
+            const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
+            tomeElement.children[5].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
+            tomeElement.children[5].style.color = this.tomeSettings.characterColor;
+        }
+      }
+
+      // If boosts are negative, skip
       if (tomeMods.reward_multiplier < 0 || tomeMods.mob_multiplier < 0 || tomeMods.character_multiplier < 0 ||
           tomeMods.lifesteal < 0 || tomeMods.speed < 0
-      ) { continue }
+      ) {
+          continue;
+      }
 
-      const tomeElement = tomeElements[i].firstChild;
       // Highlight positive modifiers
       if (tomeMods.reward_multiplier >= this.tomeSettings.highlightReward) {
         const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward * 2;
         tomeElement.children[3].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
+        tomeElement.children[3].style.color = this.tomeSettings.rewardColor;
       }
       if (tomeMods.mob_multiplier > this.tomeSettings.highlightMob) {
         const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob * 2;
         tomeElement.children[4].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
+        tomeElement.children[4].style.color = this.tomeSettings.mobColor;
       }
       if (tomeMods.character_multiplier > this.tomeSettings.highlightCharacter) {
         const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
         tomeElement.children[5].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
+        tomeElement.children[5].style.color = this.tomeSettings.characterColor;
       }
     }
   }
@@ -708,7 +728,7 @@ class Script {
         this.gameData.snackbarService.openSnackbar('Error: Value should be a number'); //feedback popup
       } else {
         this.villageSettings.strActions = newActions;
-        GM_setValue('villageSettings', this.villageSettings);
+        localStorage.setItem('QuesBS_villageSettings', JSON.stringify(this.villageSettings));
         this.gameData.snackbarService.openSnackbar('Settings saved successfully'); //feedback popup
       }
     }
@@ -739,7 +759,7 @@ window.startQuesBS = () => { // If script doesn't start, call this function (ie.
   QuesBSLoader = setInterval(setupScript, 3000);
 }
 
-window.restartQuestBS = () => { // Try to reload the game data for the script
+window.restartQuesBS = () => { // Try to reload the game data for the script
   QuesBSLoader = setInterval(async () => {
     if (QuesBS.gameData === undefined) {
       await QuesBS.getGameData();
