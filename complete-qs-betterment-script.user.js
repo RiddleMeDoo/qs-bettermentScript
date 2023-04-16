@@ -34,9 +34,6 @@ class Script {
       highlightMob: 10000,
       highlightCharacter: 10000,
       highlightElementalConv: 10000,
-      rewardColor: 'gold',
-      mobColor: 'white',
-      characterColor: '#ffffff',
     };
     this.catacomb = {
       villageActionSpeed: 0,
@@ -445,10 +442,11 @@ class Script {
       if (tomeMods.space_requirement < 4 && tomeMods.elemental_conversion > this.tomeSettings.highlightElementalConv && tomeMods.character_multiplier >= 0) {
         const isDouble = tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv * 2;
         tomeElement.children[11].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
+        tomeElement.children[11].style.borderColor = tomeElement.children[11].firstChild.style.color;
         if (tomeMods.character_multiplier > this.tomeSettings.highlightCharacter) {
             const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
             tomeElement.children[5].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
-            tomeElement.children[5].style.color = this.tomeSettings.characterColor;
+            tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color;
         }
       }
 
@@ -463,17 +461,17 @@ class Script {
       if (tomeMods.reward_multiplier >= this.tomeSettings.highlightReward) {
         const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward * 2;
         tomeElement.children[3].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
-        tomeElement.children[3].style.color = this.tomeSettings.rewardColor;
+        tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color;
       }
       if (tomeMods.mob_multiplier > this.tomeSettings.highlightMob) {
         const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob * 2;
         tomeElement.children[4].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
-        tomeElement.children[4].style.color = this.tomeSettings.mobColor;
+        tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color;
       }
       if (tomeMods.character_multiplier > this.tomeSettings.highlightCharacter) {
         const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
         tomeElement.children[5].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
-        tomeElement.children[5].style.color = this.tomeSettings.characterColor;
+        tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color;
       }
     }
   }
