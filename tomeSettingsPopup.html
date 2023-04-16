@@ -1,20 +1,46 @@
-<mat-dialog-container id="tomeSettingsContainer" class="mat-dialog-container" style="display: none;">
-  <mat-dialog-content class="mat-dialog-content">
-    <div class="item-card light-background-border p-1 m-1">
-      <form>
-        <label for="rewardHighlightSetting">Reward:</label>
-        <input type="number" id="rewardHighlightSetting", value="">%
-        <label for="mobHighlightSetting">Mob Debuff:</label>
-        <input type="number" id="mobHighlightSetting", value="">%
+<div id="tomeSettingsContainer" class="mat-dialog-container" style="width: 30%; display: none;">
+  <div class="item-card light-background-border p-2 m-1 d-flex justify-space-around">
+    <form>
+      <div>
+        <div style="width: 50%">
+          <label for="rewardHighlightSetting">Reward:</label>
+          <input type="number" id="rewardHighlightSetting", value="">%
+        </div>
+        <div style="width: 40%">
+          <label for="rewardSpaceSetting">Max space:</label>
+          <input type="number" id="rewardSpaceSetting", value="">
+        </div>
+      </div>
+      <div>
+        <div style="width: 50%">
+          <label for="mobHighlightSetting">Mob Debuff:</label>
+          <input type="number" id="mobHighlightSetting", value="">%
+        </div>
+        <div style="width: 40%">
+          <label for="mobSpaceSetting">Max space:</label>
+          <input type="number" id="mobSpaceSetting", value="">
+        </div>
+      </div>
+      <div>
+        <div style="width: 50%">
+          <label for="characterHighlightSetting">Character:</label>
+          <input type="number" id="characterHighlightSetting", value="">%
+        </div>
+        <div style="width: 40%">
+          <label for="characteterSpaceSetting">Max space:</label>
+          <input type="number" id="characterSpaceSetting", value="">
+        </div>
+      </div>
+      <div>
         <button id="tomeSettingsSaveButton" type="button" class="mat-focus-indicator mat-raised-button mat-button-base">
           Save
         </button>
         <button id="tomeSettingsCancelButton" type="button"
-          class="mat-focus-indicator mat-raised-button mat-button-base"
+        class="mat-focus-indicator mat-raised-button mat-button-base"
         >
-          Cancel
-        </button>
-      </form>
+        Cancel
+      </button>
     </div>
-  </mat-dialog-content>
-</mat-dialog-container>
+    </form>
+  </div>
+</div>
