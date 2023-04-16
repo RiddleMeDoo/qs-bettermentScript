@@ -1,0 +1,27 @@
+<mat-dialog-container id="tomeSettingsContainer" class="mat-dialog-container">
+  <mat-dialog-content class="mat-dialog-content">
+    <div class="item-card light-background-border p-1 m-1">
+      <form>
+        <label for="rewardHighlightSetting">Reward:</label>
+        <input type="number" id="rewardHighlightSetting", value="">%
+        <label for="mobHighlightSetting">Mob Debuff:</label>
+        <input type="number" id="mobHighlightSetting", value="">%
+        <button id="tomeSettingsSaveButton" type="button" class="mat-focus-indicator mat-raised-button mat-button-base">
+          Save
+        </button>
+        <button id="tomeSettingsCancelButton" type="button" onClick="closePopup()"
+          class="mat-focus-indicator mat-raised-button mat-button-base"
+        >
+          Cancel
+        </button>
+      </form>
+    </div>
+  </mat-dialog-content>
+</mat-dialog-container>
+
+<script>
+  function closePopup() {
+    const popup = document.getElementById("tomeSettingsContainer");
+    popup.style.display='none';
+  }
+</script>
