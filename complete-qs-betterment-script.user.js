@@ -443,11 +443,11 @@ class Script {
       const tomeElement = tomeElements[i].firstChild;
 
       // Check ele conversion highlighting requirements
-      if (tomeMods.space_requirement < 4 && tomeMods.elemental_conversion > this.tomeSettings.highlightElementalConv && tomeMods.character_multiplier >= 0) {
+      if (tomeMods.space_requirement <= this.tomeSettings.spaceLimitElementalConv && tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv && tomeMods.character_multiplier >= 0) {
         const isDouble = tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv * 2;
         tomeElement.children[11].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
         tomeElement.children[11].style.borderColor = tomeElement.children[11].firstChild.style.color;
-        if (tomeMods.character_multiplier > this.tomeSettings.highlightCharacter) {
+        if (tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter && tomeMods.space_requirement <= this.tomeSettings.spaceLimitCharacter) {
             const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
             tomeElement.children[5].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
             tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color;
@@ -462,17 +462,17 @@ class Script {
       }
 
       // Highlight positive modifiers
-      if (tomeMods.reward_multiplier >= this.tomeSettings.highlightReward) {
+      if (tomeMods.reward_multiplier >= this.tomeSettings.highlightReward && tomeMods.space_requirement <= this.tomeSettings.spaceLimitReward) {
         const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward * 2;
         tomeElement.children[3].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
         tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color;
       }
-      if (tomeMods.mob_multiplier > this.tomeSettings.highlightMob) {
+      if (tomeMods.mob_multiplier >= this.tomeSettings.highlightMob && tomeMods.space_requirement <= this.tomeSettings.spaceLimitMob) {
         const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob * 2;
         tomeElement.children[4].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
         tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color;
       }
-      if (tomeMods.character_multiplier > this.tomeSettings.highlightCharacter) {
+      if (tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter && tomeMods.space_requirement <= this.tomeSettings.spaceLimitCharacter) {
         const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
         tomeElement.children[5].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
         tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color;
@@ -786,9 +786,11 @@ class Script {
         highlightReward: container.querySelector('#rewardHighlightSetting').valueAsNumber * 100,
         highlightMob: container.querySelector('#mobHighlightSetting').valueAsNumber * 100,
         highlightCharacter: container.querySelector('#characterHighlightSetting').valueAsNumber * 100,
+        highlightElementalConv: container.querySelector('#elementalConvHighlightSetting').valueAsNumber * 100,
         spaceLimitReward: container.querySelector('#rewardSpaceSetting').valueAsNumber,
         spaceLimitMob: container.querySelector('#mobSpaceSetting').valueAsNumber,
         spaceLimitCharacter: container.querySelector('#characterSpaceSetting').valueAsNumber,
+        spaceLimitElementalConv: container.querySelector('#elementalConvSpaceSetting').valueAsNumber,
       };
       // Sanitize inputs
       for (const [key, value] of Object.entries(tomeSettings)) {
