@@ -7,7 +7,6 @@
 // @include      *queslar.com*
 // @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
 // @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/tooltips/tomeSettingsMenu.html
-// @grant        GM_addStyle
 // @grant        GM_getResourceText
 // ==/UserScript==
 
@@ -766,9 +765,11 @@ class Script {
     settingsContainer.querySelector('#rewardHighlightSetting').value = (this.tomeSettings.highlightReward / 100).toFixed(2);
     settingsContainer.querySelector('#mobHighlightSetting').value = (this.tomeSettings.highlightMob / 100).toFixed(2);
     settingsContainer.querySelector('#characterHighlightSetting').value = (this.tomeSettings.highlightCharacter / 100).toFixed(2);
+    settingsContainer.querySelector('#elementalConvHighlightSetting').value = (this.tomeSettings.highlightelementalConv / 100).toFixed(2);
     settingsContainer.querySelector('#rewardSpaceSetting').value = this.tomeSettings.spaceLimitReward;
     settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceLimitMob;
     settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceLimitCharacter;
+    settingsContainer.querySelector('#elementalConvSpaceSetting').value = this.tomeSettings.spaceLimitelementalConv;
 
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
