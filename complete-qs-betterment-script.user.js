@@ -750,7 +750,7 @@ class Script {
       await new Promise(resolve => setTimeout(resolve, 50));
       tomeStoreOverview = document.querySelector('app-catacomb-tome-store');
     }
-    const settings = document.createElement('div')
+    const settings = document.createElement('div');
     settings.id = 'highlightTomeSettings';
     settings.style.margin = 'auto';
     settings.innerHTML = GM_getResourceText('settingsMenu');
@@ -760,6 +760,15 @@ class Script {
     openTomeSettingsbutton.innerText = 'QuesBS Tome Settings';
     settings.insertBefore(openTomeSettingsbutton, settings.childNodes[0]);
     tomeStoreOverview.firstChild.appendChild(settings);
+
+    // Fill in input values
+    const settingsContainer = settings.childNodes[1];
+    settingsContainer.querySelector('#rewardHighlightSetting').value = (this.tomeSettings.highlightReward / 100).toFixed(2);
+    settingsContainer.querySelector('#mobHighlightSetting').value = (this.tomeSettings.highlightMob / 100).toFixed(2);
+    settingsContainer.querySelector('#characterHighlightSetting').value = (this.tomeSettings.highlightCharacter / 100).toFixed(2);
+    settingsContainer.querySelector('#rewardSpaceSetting').value = this.tomeSettings.spaceLimitReward;
+    settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceLimitMob;
+    settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceLimitCharacter;
 
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
@@ -786,6 +795,9 @@ class Script {
         this.tomeSettings[key] = isNaN(value) ? this.tomeSettings[key] : value;
       }
       localStorage.setItem('QuesBS_tomeSettings', JSON.stringify(this.tomeSettings));
+      // Refresh highlighting
+      const target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
+      this.handleCatacombTomeStore({target: target[0]});
     }
   }
 }
