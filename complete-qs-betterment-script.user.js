@@ -6,6 +6,7 @@
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
+// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/tooltips/tomeSettingsPopup.html
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // ==/UserScript==
@@ -257,6 +258,8 @@ class Script {
         });
       }
     } else if(path[path.length - 1].toLowerCase() === 'tome_store' && path[0].toLowerCase() === 'catacombs') {
+      await this.insertTomeSettings();
+
       let target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
       while(target.length < 1) {
         await new Promise(resolve => setTimeout(resolve, 200))
@@ -733,6 +736,35 @@ class Script {
       }
     }
     settingsOverview.appendChild(questSettings);
+  }
+  
+  async insertTomeSettings() {
+    /**
+     * Inserts a custom popup menu for tome settings
+     */  
+    //Get store page contents
+    let tomeStoreOverview = document.querySelector('app-catacomb-tome-store');
+    while(!tomeStoreOverview) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      tomeStoreOverview = document.querySelector('app-catacomb-tome-store');
+    }
+    const settings = document.createElement('div')
+    settings.id = 'highlightTomeSettings';
+    settings.innerHTML = GM_getResourceText('settingsMenu');
+    const openTomeSettingsbutton = document.createElement('button');
+    openTomeSettingsbutton.id = 'openTomeSettingsButton';
+    openTomeSettingsbutton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
+    openTomeSettingsbutton.innerText = 'QuesBS Tome Settings';
+    settings.appendChild(openTomeSettingsbutton);
+    tomeStoreOverview.firstChild.appendChild(settings);
+
+    // Set up buttons
+    openTomeSettingsbutton.onclick = () => {
+      document.querySelector('#tomeSettingsContainer').style.display = 'inline-block';
+    };
+    document.querySelector('#tomeSettingsCancelButton').onclick = () => {
+      document.querySelector('#tomeSettingsContainer').style.display = 'none';
+    }
   }
 }
 

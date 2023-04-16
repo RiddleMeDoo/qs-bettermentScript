@@ -1,4 +1,4 @@
-<mat-dialog-container id="tomeSettingsContainer" class="mat-dialog-container">
+<mat-dialog-container id="tomeSettingsContainer" class="mat-dialog-container" style="display: none;">
   <mat-dialog-content class="mat-dialog-content">
     <div class="item-card light-background-border p-1 m-1">
       <form>
@@ -9,7 +9,7 @@
         <button id="tomeSettingsSaveButton" type="button" class="mat-focus-indicator mat-raised-button mat-button-base">
           Save
         </button>
-        <button id="tomeSettingsCancelButton" type="button" onClick="closePopup()"
+        <button id="tomeSettingsCancelButton" type="button"
           class="mat-focus-indicator mat-raised-button mat-button-base"
         >
           Cancel
@@ -18,10 +18,3 @@
     </div>
   </mat-dialog-content>
 </mat-dialog-container>
-
-<script>
-  function closePopup() {
-    const popup = document.getElementById("tomeSettingsContainer");
-    popup.style.display='none';
-  }
-</script>
