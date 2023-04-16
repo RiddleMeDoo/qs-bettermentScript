@@ -748,17 +748,18 @@ class Script {
     }
     const settings = document.createElement('div')
     settings.id = 'highlightTomeSettings';
+    settings.style.margin = 'auto';
     settings.innerHTML = GM_getResourceText('settingsMenu');
     const openTomeSettingsbutton = document.createElement('button');
     openTomeSettingsbutton.id = 'openTomeSettingsButton';
     openTomeSettingsbutton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
     openTomeSettingsbutton.innerText = 'QuesBS Tome Settings';
-    settings.appendChild(openTomeSettingsbutton);
+    settings.insertBefore(openTomeSettingsbutton, settings.childNodes[0]);
     tomeStoreOverview.firstChild.appendChild(settings);
 
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {
-      document.querySelector('#tomeSettingsContainer').style.display = 'inline-block';
+      document.querySelector('#tomeSettingsContainer').style.display = 'inline-grid';
     };
     document.querySelector('#tomeSettingsCancelButton').onclick = () => {
       document.querySelector('#tomeSettingsContainer').style.display = 'none';
