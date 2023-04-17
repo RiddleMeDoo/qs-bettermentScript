@@ -29,10 +29,10 @@ class Script {
       strActions: 30000
     };
     this.tomeSettings = JSON.parse(localStorage.getItem('QuesBS_tomeSettings')) ?? {
-      highlightReward: 10000,
-      highlightMob: 10000,
-      highlightCharacter: 10000,
-      highlightElementalConv: 10000,
+      highlightReward: 99900,
+      highlightMob: 99900,
+      highlightCharacter: 99900,
+      highlightElementalConv: 99900,
       spaceLimitReward: 6,
       spaceLimitMob: 6,
       spaceLimitCharacter: 6,
@@ -48,10 +48,6 @@ class Script {
     //observer setup
     this.initObservers();
     this.currentPath = window.location.hash.split('/').splice(2).join();
-  }
-
-  playAudio() {
-    this.eventAudio.play();
   }
 
   async getGameData() { //ULTIMATE POWER
