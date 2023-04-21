@@ -441,6 +441,17 @@ class Script {
     // Put an id on the first tome of the store to mark it as "processed"
     tomeElements[0].id = 'highlight';
 
+    // Position "Refresh Store" button so it doesnt move around when the number of rolled tomes is greater than 5
+    const refreshStoreButton = $('app-catacomb-tome-store > .scrollbar > .d-flex.justify-content-around > .my-auto');
+    if (refreshStoreButton[0]) {
+      refreshStoreButton[0].style.position = "absolute";
+      refreshStoreButton[0].style.top = "0%";
+      refreshStoreButton[0].style.right = "0%";
+      refreshStoreButton[0].style.border = "2px solid";
+      refreshStoreButton[0].style.color = "white";
+      refreshStoreButton[0].style.fontSize = "12px";
+    }
+
     // For each tome (loop by index), check if tome has good modifiers.
     for (let i = 0; i < tomes.length; i++) {
       const tomeMods = tomes[i];
@@ -453,8 +464,10 @@ class Script {
       
       const meetsWbTomeRequirements = 
         tomeMods.space_requirement <= this.tomeSettings.spaceLimitWb 
-        && tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv
-        && tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb;
+        && tomeMods.elemental_conversion >= 0
+        && tomeMods.character_multiplier >= 0
+        && (tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv
+        || tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb);
 
       const meetsRewardMultiRequirements = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward 
         && tomeMods.space_requirement <= this.tomeSettings.spaceLimitReward;
@@ -467,13 +480,16 @@ class Script {
 
       // Highlight world boss tomes
       if (meetsWbTomeRequirements) {
-        const isDoubleElemental = tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv * 2;
-        tomeElement.children[11].style.border = `${isDoubleElemental ? 'thick' : 'thin'} solid`;
-        tomeElement.children[11].style.borderColor = 'RebeccaPurple';
+        if (tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv) {
+          const isDoubleElemental = tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv * 2;
+          tomeElement.children[11].style.border = `${isDoubleElemental ? 'thick' : '1px'} solid`;
+          tomeElement.children[11].style.borderColor = 'white';
 
-        const isDoubleCharacter = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb * 2;
-        tomeElement.children[5].style.border = `${isDoubleCharacter ? 'thick' : 'thin'} solid`;
-        tomeElement.children[5].style.borderColor = 'RebeccaPurple';
+        } else if (tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb) {
+          const isDoubleCharacter = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb * 2;
+          tomeElement.children[5].style.border = `${isDoubleCharacter ? 'thick' : '1px'} solid`;
+          tomeElement.children[5].style.borderColor = 'white';
+        }
 
         shouldFadeTome = false;
       }
@@ -483,26 +499,26 @@ class Script {
         && tomeMods.reward_multiplier >= 0
         && (this.tomeSettings.highlightNegative || !this.tomeSettings.highlightNegative && !hasNegativeMods)
       ) {  // Highlight positive modifiers
-        if (hasPositiveRareRolls) {
+        if (hasPositiveRareRolls && tomeMods.space_requirement < 5) {
           shouldFadeTome = false;
         }
         if (meetsRewardMultiRequirements) {
           const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward * 2;
-          tomeElement.children[3].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
+          tomeElement.children[3].style.border = `${isDouble ? 'thick' : '2px'} solid`;
           tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color;
 
           shouldFadeTome = false;
         }
         if (meetsMobDebuffRequirements) {
           const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob * 2;
-          tomeElement.children[4].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
+          tomeElement.children[4].style.border = `${isDouble ? 'thick' : '2px'} solid`;
           tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color;
 
           shouldFadeTome = false;
         }
         if (meetsCharacterMultiRequirements) {
           const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
-          tomeElement.children[5].style.border = `${isDouble ? 'thick' : 'thin'} solid`;
+          tomeElement.children[5].style.border = `${isDouble ? 'thick' : '2px'} solid`;
           tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color;
 
           shouldFadeTome = false;
