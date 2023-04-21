@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.6.0
-// @description  A script that lets you know more info about quests
+// @version      1.6.1
+// @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
-// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/tomeSettingsMenu.html
+// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/tomeSettingsFix/tomeSettingsMenu.html
 // @grant        GM_getResourceText
 // ==/UserScript==
 
@@ -40,6 +40,11 @@ class Script {
       spaceLimitWb: 6,
       highlightNegative: false,
     };
+    // ! Temporary band-aid assurance, remove next update
+    this.tomeSettings.spaceLimitWb = this.tomeSettings.spaceLimitWb ?? 6;
+    this.tomeSettings.highlightCharacterWb = this.tomeSettings.highlightCharacterWb ?? 99900;
+    this.tomeSettings.highlightNegative = this.tomeSettings.highlightNegative ?? false;
+
     this.catacomb = {
       villageActionSpeed: 0,
       actionTimerSeconds: 30,
@@ -444,6 +449,7 @@ class Script {
       // Requirements are checked here since they're very long
       const hasNegativeRareRolls = tomeMods.lifesteal < 0 || tomeMods.multi_mob < 0 || tomeMods.speed < 0 || tomeMods.skip < 0;
       const hasPositiveRareRolls = tomeMods.lifesteal > 0 || tomeMods.multi_mob > 0 || tomeMods.speed > 0 || tomeMods.skip > 0;
+      const hasNegativeMods = tomeMods.reward_multiplier < 0 || tomeMods.mob_multiplier < 0 || tomeMods.character_multiplier < 0;
       
       const meetsWbTomeRequirements = 
         tomeMods.space_requirement <= this.tomeSettings.spaceLimitWb 
@@ -472,7 +478,11 @@ class Script {
         shouldFadeTome = false;
       }
 
-      if (!hasNegativeRareRolls) {  // Highlight positive modifiers
+      if (
+        !hasNegativeRareRolls 
+        && tomeMods.reward_multiplier >= 0
+        && (this.tomeSettings.highlightNegative || !this.tomeSettings.highlightNegative && !hasNegativeMods)
+      ) {  // Highlight positive modifiers
         if (hasPositiveRareRolls) {
           shouldFadeTome = false;
         }
@@ -795,11 +805,13 @@ class Script {
     settingsContainer.querySelector('#rewardHighlightSetting').value = (this.tomeSettings.highlightReward / 100).toFixed(2);
     settingsContainer.querySelector('#mobHighlightSetting').value = (this.tomeSettings.highlightMob / 100).toFixed(2);
     settingsContainer.querySelector('#characterHighlightSetting').value = (this.tomeSettings.highlightCharacter / 100).toFixed(2);
+    settingsContainer.querySelector('#characterWbHighlightSetting').value = (this.tomeSettings.highlightCharacterWb / 100).toFixed(2);
     settingsContainer.querySelector('#elementalConvHighlightSetting').value = (this.tomeSettings.highlightElementalConv / 100).toFixed(2);
     settingsContainer.querySelector('#rewardSpaceSetting').value = this.tomeSettings.spaceLimitReward;
     settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceLimitMob;
     settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceLimitCharacter;
-    settingsContainer.querySelector('#elementalConvSpaceSetting').value = this.tomeSettings.spaceLimitElementalConv;
+    settingsContainer.querySelector('#wbSpaceSetting').value = this.tomeSettings.spaceLimitWb;
+    settingsContainer.querySelector('#highlightNegativeSetting').checked = this.tomeSettings.highlightNegative;
 
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
@@ -817,11 +829,13 @@ class Script {
         highlightReward: container.querySelector('#rewardHighlightSetting').valueAsNumber * 100,
         highlightMob: container.querySelector('#mobHighlightSetting').valueAsNumber * 100,
         highlightCharacter: container.querySelector('#characterHighlightSetting').valueAsNumber * 100,
+        highlightCharacterWb: container.querySelector('#characterWbHighlightSetting').valueAsNumber * 100,
         highlightElementalConv: container.querySelector('#elementalConvHighlightSetting').valueAsNumber * 100,
         spaceLimitReward: container.querySelector('#rewardSpaceSetting').valueAsNumber,
         spaceLimitMob: container.querySelector('#mobSpaceSetting').valueAsNumber,
         spaceLimitCharacter: container.querySelector('#characterSpaceSetting').valueAsNumber,
-        spaceLimitElementalConv: container.querySelector('#elementalConvSpaceSetting').valueAsNumber,
+        spaceLimitWb: container.querySelector('#wbSpaceSetting').valueAsNumber,
+        highlightNegative: container.querySelector('#highlightNegativeSetting').checked,
       };
       // Sanitize inputs
       for (const [key, value] of Object.entries(tomeSettings)) {
