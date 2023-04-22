@@ -516,21 +516,21 @@ class Script {
         if (meetsRewardMultiRequirements) {
           const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward * 2;
           tomeElement.children[3].style.border = `${isDouble ? 'thick' : '2px'} solid`;
-          tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color;
+          tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color ?? 'gold';
           
           sumGoodRolls += isDouble ? 2 : 1;
         }
         if (meetsMobDebuffRequirements) {
           const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob * 2;
           tomeElement.children[4].style.border = `${isDouble ? 'thick' : '2px'} solid`;
-          tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color;
+          tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color ?? 'white';
           
           sumGoodRolls += isDouble ? 2 : 1;
         }
         if (meetsCharacterMultiRequirements) {
           const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
           tomeElement.children[5].style.border = `${isDouble ? 'thick' : '2px'} solid`;
-          tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color;
+          tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color ?? 'white';
 
           sumGoodRolls += isDouble ? 2 : 1;
         }
