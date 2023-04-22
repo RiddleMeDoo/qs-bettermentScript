@@ -486,28 +486,41 @@ class Script {
         && tomeMods.space_requirement <= this.tomeSettings.spaceLimitCharacter
         && tomeMods.reward_multiplier >= 0;
 
+      let sumGoodRolls = 0; // Count how many requirements were met
       let shouldFadeTome = true;  // Flag that determines whether tome should be faded
 
       // Highlight world boss tomes
       if (meetsWbTomeRequirements) {
+        let sumRolls = 0;
+
         if (tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv) {
           const isDoubleElemental = tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv * 2;
+          sumRolls += isDoubleElemental ? 2 : 1;
           tomeElement.children[11].style.border = `${isDoubleElemental ? 'thick' : '1px'} solid`;
           tomeElement.children[11].style.borderColor = 'forestgreen';
         } 
 
         if (tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb) {
           const isDoubleCharacter = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb * 2;
+          sumRolls += isDoubleCharacter ? 2 : 1;
           tomeElement.children[5].style.border = `${isDoubleCharacter ? 'thick' : '1px'} solid`;
           tomeElement.children[5].style.borderColor = 'forestgreen';
         }
 
-        shouldFadeTome = false;
+        if (sumRolls > 1) {
+          shouldFadeTome = false;
+        }
       }
 
       // Highlight other modifiers if they meet the requirements
       if (!hasNegativeRareLegendaryRolls) { 
         if (meetsRareLegendaryRequirements) {
+          sumGoodRolls += [
+            tomeMods.lifesteal > 0, 
+            tomeMods.multi_mob > 0,
+            tomeMods.speed > 0,
+            tomeMods.skip > 0
+          ].filter(Boolean).length;
           shouldFadeTome = false;
         }
 
@@ -515,24 +528,30 @@ class Script {
           const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward * 2;
           tomeElement.children[3].style.border = `${isDouble ? 'thick' : '2px'} solid`;
           tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color;
-
-          shouldFadeTome = false;
+          
+          sumGoodRolls += isDouble ? 2 : 1;
         }
         if (meetsMobDebuffRequirements) {
           const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob * 2;
           tomeElement.children[4].style.border = `${isDouble ? 'thick' : '2px'} solid`;
           tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color;
-
-          shouldFadeTome = false;
+          
+          sumGoodRolls += isDouble ? 2 : 1;
         }
         if (meetsCharacterMultiRequirements) {
           const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
           tomeElement.children[5].style.border = `${isDouble ? 'thick' : '2px'} solid`;
           tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color;
 
-          shouldFadeTome = false;
+          sumGoodRolls += isDouble ? 2 : 1;
         }
       }
+
+      if ((this.tomeSettings.highlightDoubleOrMore && sumGoodRolls >= 2) ||
+          (!this.tomeSettings.highlightDoubleOrMore && sumGoodRolls > 0)
+      ) {
+        shouldFadeTome = false;
+      } 
 
       // Fade out tomes that didn't meet requirements
       if (shouldFadeTome) {
