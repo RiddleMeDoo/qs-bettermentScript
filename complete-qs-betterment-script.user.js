@@ -40,14 +40,14 @@ class Script {
       spaceLimitWb: 6,
       spaceLimitRare: 6,
       spaceLimitLegendary: 6,
-      highlightDoubleOrMore: false,
+      numGoodRolls: 1,
     };
     // ! Temporary band-aid assurance, remove next update
     this.tomeSettings.spaceLimitWb = this.tomeSettings.spaceLimitWb ?? 6;
     this.tomeSettings.spaceLimitRare = this.tomeSettings.spaceLimitRare ?? 6;
     this.tomeSettings.spaceLimitLegendary = this.tomeSettings.spaceLimitLegendary ?? 6;
     this.tomeSettings.highlightCharacterWb = this.tomeSettings.highlightCharacterWb ?? 99900;
-    this.tomeSettings.highlightDoubleOrMore = this.tomeSettings.highlightDoubleOrMore ?? false;
+    this.tomeSettings.numGoodRolls = this.tomeSettings.numGoodRolls ?? 1;
 
     this.catacomb = {
       villageActionSpeed: 0,
@@ -536,9 +536,7 @@ class Script {
         }
       }
 
-      if ((this.tomeSettings.highlightDoubleOrMore && sumGoodRolls >= 2) ||
-          (!this.tomeSettings.highlightDoubleOrMore && sumGoodRolls > 0)
-      ) {
+      if (sumGoodRolls >= this.tomeSettings.numGoodRolls) {
         shouldFadeTome = false;
       } 
 
@@ -864,7 +862,7 @@ class Script {
     settingsContainer.querySelector('#wbSpaceSetting').value = this.tomeSettings.spaceLimitWb;
     settingsContainer.querySelector('#rareSpaceSetting').value = this.tomeSettings.spaceLimitRare;
     settingsContainer.querySelector('#legendarySpaceSetting').value = this.tomeSettings.spaceLimitLegendary;
-    settingsContainer.querySelector('#highlightDoubleOrMore').checked = this.tomeSettings.highlightDoubleOrMore;
+    settingsContainer.querySelector('#numGoodRolls').value = this.tomeSettings.numGoodRolls;
 
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
@@ -890,7 +888,7 @@ class Script {
         spaceLimitWb: container.querySelector('#wbSpaceSetting').valueAsNumber,
         spaceLimitRare: container.querySelector('#rareSpaceSetting').valueAsNumber,
         spaceLimitLegendary: container.querySelector('#legendarySpaceSetting').valueAsNumber,
-        highlightDoubleOrMore: container.querySelector('#highlightDoubleOrMore').checked,
+        numGoodRolls: container.querySelector('#numGoodRolls').valueAsNumber,
       };
       // Sanitize inputs
       for (const [key, value] of Object.entries(tomeSettings)) {
