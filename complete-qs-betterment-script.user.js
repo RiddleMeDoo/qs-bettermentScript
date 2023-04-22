@@ -815,6 +815,7 @@ class Script {
   async modifyTomeStorePage() {
     /**
      * Inserts a custom popup menu for tome settings and moves the refresh button to the top
+     * Moving the refresh button code was contributed from Ender
      */  
     //Get store page contents
     let tomeStoreOverview = document.querySelector('app-catacomb-tome-store');
@@ -823,7 +824,7 @@ class Script {
       tomeStoreOverview = document.querySelector('app-catacomb-tome-store');
     }
 
-    // Position "Refresh Store" button so it doesnt move around when the number of rolled tomes is greater than 5
+    // Position "Refresh Store" button so it doesnt move around when the amount of tomes is greater than 5
     const refreshStoreButton = $('app-catacomb-tome-store > .scrollbar > .d-flex.justify-content-around > .my-auto');
     if (refreshStoreButton[0]) {
       refreshStoreButton[0].className = refreshStoreButton[0].className + ' light-background-border'; 
