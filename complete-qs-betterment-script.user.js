@@ -265,7 +265,7 @@ class Script {
         });
       }
     } else if(path[path.length - 1].toLowerCase() === 'tome_store' && path[0].toLowerCase() === 'catacombs') {
-      await this.insertTomeSettings();
+      await this.modifyTomeStorePage();
 
       let target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
       while(target.length < 1) {
@@ -444,17 +444,6 @@ class Script {
     }
     // Put an id on the first tome of the store to mark it as "processed"
     tomeElements[0].id = 'highlight';
-
-    // Position "Refresh Store" button so it doesnt move around when the number of rolled tomes is greater than 5
-    const refreshStoreButton = $('app-catacomb-tome-store > .scrollbar > .d-flex.justify-content-around > .my-auto');
-    if (refreshStoreButton[0]) {
-      refreshStoreButton[0].style.position = "absolute";
-      refreshStoreButton[0].style.top = "0%";
-      refreshStoreButton[0].style.right = "0%";
-      refreshStoreButton[0].style.border = "2px solid";
-      refreshStoreButton[0].style.color = "white";
-      refreshStoreButton[0].style.fontSize = "12px";
-    }
 
     // For each tome (loop by index), check if tome has good modifiers.
     for (let i = 0; i < tomes.length; i++) {
@@ -823,9 +812,9 @@ class Script {
     settingsOverview.appendChild(questSettings);
   }
   
-  async insertTomeSettings() {
+  async modifyTomeStorePage() {
     /**
-     * Inserts a custom popup menu for tome settings
+     * Inserts a custom popup menu for tome settings and moves the refresh button to the top
      */  
     //Get store page contents
     let tomeStoreOverview = document.querySelector('app-catacomb-tome-store');
@@ -833,9 +822,26 @@ class Script {
       await new Promise(resolve => setTimeout(resolve, 50));
       tomeStoreOverview = document.querySelector('app-catacomb-tome-store');
     }
+
+    // Position "Refresh Store" button so it doesnt move around when the number of rolled tomes is greater than 5
+    const refreshStoreButton = $('app-catacomb-tome-store > .scrollbar > .d-flex.justify-content-around > .my-auto');
+    if (refreshStoreButton[0]) {
+      refreshStoreButton[0].className = refreshStoreButton[0].className + ' light-background-border'; 
+      refreshStoreButton[0].style.padding = '0.5rem';
+      refreshStoreButton[0].style.position = 'absolute';
+      refreshStoreButton[0].style.top = '-1%';
+      refreshStoreButton[0].style.right = '-1%';
+      refreshStoreButton[0].style.fontSize = '12px';
+      // Create empty div to fill in the space left behind
+      const emptyDiv = document.createElement('div')
+      emptyDiv.style.width = '35%';
+      refreshStoreButton[0].parentElement.appendChild(emptyDiv);
+    }
+
+    // Create settings menu
     const settings = document.createElement('div');
     settings.id = 'highlightTomeSettings';
-    settings.style.margin = 'auto';
+    settings.style.margin = '1rem';
     settings.innerHTML = GM_getResourceText('settingsMenu');
     const openTomeSettingsbutton = document.createElement('button');
     openTomeSettingsbutton.id = 'openTomeSettingsButton';
