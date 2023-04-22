@@ -38,12 +38,16 @@ class Script {
       spaceLimitMob: 6,
       spaceLimitCharacter: 6,
       spaceLimitWb: 6,
-      highlightNegative: false,
+      spaceLimitRare: 6,
+      spaceLimitLegendary: 6,
+      highlightDoubleOrMore: false,
     };
     // ! Temporary band-aid assurance, remove next update
     this.tomeSettings.spaceLimitWb = this.tomeSettings.spaceLimitWb ?? 6;
+    this.tomeSettings.spaceLimitRare = this.tomeSettings.spaceLimitRare ?? 6;
+    this.tomeSettings.spaceLimitLegendary = this.tomeSettings.spaceLimitLegendary ?? 6;
     this.tomeSettings.highlightCharacterWb = this.tomeSettings.highlightCharacterWb ?? 99900;
-    this.tomeSettings.highlightNegative = this.tomeSettings.highlightNegative ?? false;
+    this.tomeSettings.highlightDoubleOrMore = this.tomeSettings.highlightDoubleOrMore ?? false;
 
     this.catacomb = {
       villageActionSpeed: 0,
@@ -458,9 +462,13 @@ class Script {
       const tomeElement = tomeElements[i].firstChild;
 
       // Requirements are checked here since they're very long
-      const hasNegativeRareRolls = tomeMods.lifesteal < 0 || tomeMods.multi_mob < 0 || tomeMods.speed < 0 || tomeMods.skip < 0;
-      const hasPositiveRareRolls = tomeMods.lifesteal > 0 || tomeMods.multi_mob > 0 || tomeMods.speed > 0 || tomeMods.skip > 0;
-      const hasNegativeMods = tomeMods.reward_multiplier < 0 || tomeMods.mob_multiplier < 0 || tomeMods.character_multiplier < 0;
+      const hasNegativeRareLegendaryRolls = tomeMods.lifesteal < 0 || tomeMods.multi_mob < 0 
+                                            || tomeMods.speed < 0 || tomeMods.skip < 0;
+      const meetsRareLegendaryRequirements = (
+        (tomeMods.lifesteal > 0 || tomeMods.multi_mob > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceLimitRare) 
+        || (
+          (tomeMods.speed > 0 || tomeMods.skip > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceLimitLegendary
+        );
       
       const meetsWbTomeRequirements = 
         tomeMods.space_requirement <= this.tomeSettings.spaceLimitWb 
@@ -472,9 +480,11 @@ class Script {
       const meetsRewardMultiRequirements = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward 
         && tomeMods.space_requirement <= this.tomeSettings.spaceLimitReward;
       const meetsMobDebuffRequirements = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob 
-        && tomeMods.space_requirement <= this.tomeSettings.spaceLimitMob;
+        && tomeMods.space_requirement <= this.tomeSettings.spaceLimitMob
+        && tomeMods.reward_multiplier >= 0;
       const meetsCharacterMultiRequirements = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter 
-        && tomeMods.space_requirement <= this.tomeSettings.spaceLimitCharacter;
+        && tomeMods.space_requirement <= this.tomeSettings.spaceLimitCharacter
+        && tomeMods.reward_multiplier >= 0;
 
       let shouldFadeTome = true;  // Flag that determines whether tome should be faded
 
@@ -483,25 +493,24 @@ class Script {
         if (tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv) {
           const isDoubleElemental = tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv * 2;
           tomeElement.children[11].style.border = `${isDoubleElemental ? 'thick' : '1px'} solid`;
-          tomeElement.children[11].style.borderColor = 'white';
+          tomeElement.children[11].style.borderColor = 'forestgreen';
+        } 
 
-        } else if (tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb) {
+        if (tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb) {
           const isDoubleCharacter = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb * 2;
           tomeElement.children[5].style.border = `${isDoubleCharacter ? 'thick' : '1px'} solid`;
-          tomeElement.children[5].style.borderColor = 'white';
+          tomeElement.children[5].style.borderColor = 'forestgreen';
         }
 
         shouldFadeTome = false;
       }
 
-      if (
-        !hasNegativeRareRolls 
-        && tomeMods.reward_multiplier >= 0
-        && (this.tomeSettings.highlightNegative || !this.tomeSettings.highlightNegative && !hasNegativeMods)
-      ) {  // Highlight positive modifiers
-        if (hasPositiveRareRolls && tomeMods.space_requirement < 5) {
+      // Highlight other modifiers if they meet the requirements
+      if (!hasNegativeRareLegendaryRolls) { 
+        if (meetsRareLegendaryRequirements) {
           shouldFadeTome = false;
         }
+
         if (meetsRewardMultiRequirements) {
           const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward * 2;
           tomeElement.children[3].style.border = `${isDouble ? 'thick' : '2px'} solid`;
@@ -827,7 +836,9 @@ class Script {
     settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceLimitMob;
     settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceLimitCharacter;
     settingsContainer.querySelector('#wbSpaceSetting').value = this.tomeSettings.spaceLimitWb;
-    settingsContainer.querySelector('#highlightNegativeSetting').checked = this.tomeSettings.highlightNegative;
+    settingsContainer.querySelector('#rareSpaceSetting').value = this.tomeSettings.spaceLimitRare;
+    settingsContainer.querySelector('#legendarySpaceSetting').value = this.tomeSettings.spaceLimitLegendary;
+    settingsContainer.querySelector('#highlightDoubleOrMore').checked = this.tomeSettings.highlightDoubleOrMore;
 
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
@@ -851,7 +862,9 @@ class Script {
         spaceLimitMob: container.querySelector('#mobSpaceSetting').valueAsNumber,
         spaceLimitCharacter: container.querySelector('#characterSpaceSetting').valueAsNumber,
         spaceLimitWb: container.querySelector('#wbSpaceSetting').valueAsNumber,
-        highlightNegative: container.querySelector('#highlightNegativeSetting').checked,
+        spaceLimitRare: container.querySelector('#rareSpaceSetting').valueAsNumber,
+        spaceLimitLegendary: container.querySelector('#legendarySpaceSetting').valueAsNumber,
+        highlightDoubleOrMore: container.querySelector('#highlightDoubleOrMore').checked,
       };
       // Sanitize inputs
       for (const [key, value] of Object.entries(tomeSettings)) {
