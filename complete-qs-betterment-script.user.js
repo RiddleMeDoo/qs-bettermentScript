@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.6.1
+// @version      1.6.2
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -171,6 +171,9 @@ class Script {
     this.tomeObserver = new MutationObserver(mutationsList => {
       this.handleCatacombTomeStore(mutationsList[0]);
     });
+    this.wbDropsObserver = new MutationObserver(mutationsList => {
+      this.handleWbChestOpening(mutationsList[0]);
+    });
   }
 
 
@@ -264,7 +267,8 @@ class Script {
           childList: true, subtree: true, attributes: false,
         });
       }
-    } else if(path[path.length - 1].toLowerCase() === 'tome_store' && path[0].toLowerCase() === 'catacombs') {
+
+    } else if (path[path.length - 1].toLowerCase() === 'tome_store' && path[0].toLowerCase() === 'catacombs') {
       await this.modifyTomeStorePage();
 
       let target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
@@ -277,6 +281,16 @@ class Script {
         childList: true, subtree: false, attributes: false
       });
       this.handleCatacombTomeStore({target: target[0]});
+
+    } else if (path[path.length - 1].toLowerCase() === 'chests' && path[0].toLowerCase() === 'wb') {
+      let target = $('app-game-world-boss-chests > div');
+      while(target.length < 1) {
+        await new Promise(resolve => setTimeout(resolve, 200))
+        target = $('app-game-world-boss-chests > div');
+      }
+      this.wbDropsObserver.observe(target[0], {
+        childList: true, subtree: false, attributes: false
+      });
     }
   }
 
@@ -550,12 +564,48 @@ class Script {
     }
   }
 
+  async handleWbChestOpening(mutation) {
+    /**
+     * Highlight drops that are desirable
+     * - Gems
+     * - Descriptions
+     * - Equipment
+     * - Tomes
+    **/
+    // Check if first time opening chests on page
+    if (mutation?.addedNodes?.[0]?.innerText && mutation.addedNodes[0].innerText.startsWith('After')) {
+      // Change observer to listen to subsequent chest openings
+      let target = document.querySelector('app-game-world-boss-chest-drops');
+      this.wbDropsObserver.disconnect();
+      this.wbDropsObserver.observe(target, {
+        childList: true, subtree: false, attributes: false
+      });
+    }
+
+
+    // Get list of drops
+    const dropsList = document.querySelector('app-game-world-boss-chest-drops').children;
+    for (const drop of dropsList) {
+      const text = drop.innerText.split(' ');
+      const dropType = text[text.length - 1].toLowerCase();
+      if (dropType === 'gem' || dropType === 'description' || dropType === 'item' || dropType === 'tome') {
+        // Highlight the element
+        drop.style.backgroundColor = 'darkblue';
+      }
+    }
+  }
+
   stopObserver(pathname) {
     const stop = {
       'actions,quests': () => this.personalQuestObserver.disconnect(),
       'village,quests': () => this.villageQuestObserver.disconnect(),
+      'catacombs,catacomb': () => this.catacombObserver.disconnect(),
+      'catacombs,tome_store': () => this.tomeObserver.disconnect(),
+      'wb,chests': () => this.wbDropsObserver.disconnect(),
     }
-    if(stop[pathname]) stop[pathname]();
+    if(stop[pathname]) {
+      stop[pathname]();
+    }
   }
 
   getStatReward() {
