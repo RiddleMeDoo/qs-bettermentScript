@@ -826,7 +826,7 @@ class Script {
     const refreshStoreButton = $('app-catacomb-tome-store > .scrollbar > .d-flex.justify-content-around > .my-auto');
     if (refreshStoreButton[0]) {
       refreshStoreButton[0].className = refreshStoreButton[0].className + ' light-background-border'; 
-      refreshStoreButton[0].style.padding = '0.5rem';
+      refreshStoreButton[0].style.padding = '1px 0.5rem 0px 0.5rem';
       refreshStoreButton[0].style.position = 'absolute';
       refreshStoreButton[0].style.top = '-1%';
       refreshStoreButton[0].style.right = '-1%';
