@@ -957,8 +957,15 @@ class Script {
 
 function getCatacombEndTime(numMobs, actionTimerSeconds, extraSeconds=0) {
   const current = new Date();
+  const options = {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hourCycle: 'h24',
+  };
   const finishTime = new Date(current.getTime() + (numMobs * actionTimerSeconds + extraSeconds) * 1000)
-                              .toLocaleTimeString('en-GB').match(/\d\d:\d\d/)[0];
+                              .toLocaleString('en-US', options);
   return finishTime;
 }
 
