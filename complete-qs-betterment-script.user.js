@@ -517,7 +517,7 @@ class Script {
       }
 
       // Highlight other modifiers if they meet the requirements
-      if (!hasNegativeRareLegendaryRolls) { 
+      if (!hasNegativeRareLegendaryRolls || this.tomeSettings.ignoreNegativeRareLegendary) { 
         if (meetsRareLegendaryRequirements) {
           sumGoodRolls += [
             tomeMods.lifesteal > 0, 
