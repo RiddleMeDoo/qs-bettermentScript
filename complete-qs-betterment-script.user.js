@@ -99,6 +99,7 @@ class Script {
     this.catacomb = {
       villageActionSpeed: villageActionSpeedBoost,
       actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100),
+      tomesAreEquipped: tomes.mobs > 0,
     }
   }
 
@@ -416,23 +417,30 @@ class Script {
       parentElement.appendChild(endTimeEle);
 
     } else { // Inactive view
-      const parentElement = mainView.firstChild.children[1].firstChild.firstChild;
-      const totalMobs = parseInt(parentElement.firstChild.children[1].firstChild.children[11].children[1].innerText.replace(/,/g, ''));
-      const toInsertIntoEle = parentElement.children[1];
+      const mobOverviewEle = mainView.firstChild.children[1].firstChild.firstChild;
+      const totalMobs = parseInt(mobOverviewEle.firstChild.children[1].firstChild.children[11].children[1].innerText.replace(/,/g, ''));
+      const cataTierSelectionEle = mobOverviewEle.children[1];
 
       // Create the end time ele to insert into
       const endTimeEle = document.getElementById('catacombEndTime') ?? document.createElement('div');
       endTimeEle.id = 'catacombEndTime';
       endTimeEle.innerText = `End time (local): ${getCatacombEndTime(totalMobs, this.catacomb.actionTimerSeconds)}`;
-      toInsertIntoEle.appendChild(endTimeEle);
+      cataTierSelectionEle.appendChild(endTimeEle);
 
       // Create tooltips for gold/hr and emblems/hr
-      const goldEle = parentElement.firstChild.children[1].firstChild.children[9].children[1];
-      const emblemsEle = parentElement.firstChild.children[1].firstChild.children[10].children[1];
+      const goldEle = mobOverviewEle.firstChild.children[1].firstChild.children[9].children[1];
+      const emblemsEle = mobOverviewEle.firstChild.children[1].firstChild.children[10].children[1];
       const goldHr = parseInt(goldEle.innerText.replace(/,/g, '')) / this.catacomb.actionTimerSeconds * 3600;
       goldEle.parentElement.setAttribute('title', `${goldHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
       const emblemsHr = parseInt(emblemsEle.innerText.replace(/,/g, '')) / totalMobs / this.catacomb.actionTimerSeconds * 3600;
       emblemsEle.parentElement.setAttribute('title', `${emblemsHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
+
+      // Highlight start button if tomes are equipped
+      if (this.catacomb.tomesAreEquipped) {
+        const startCataButton = mobOverviewEle.nextSibling.firstChild;
+        startCataButton.style.boxShadow = '0px 0px 12px 7px red';
+        startCataButton.style.color = 'red';
+      }
     }
   }
 
