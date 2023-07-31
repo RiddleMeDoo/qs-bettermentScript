@@ -42,6 +42,7 @@ class Script {
       spaceLimitLegendary: 6,
       numGoodRolls: 1,
       ignoreNegativeRareLegendary: false,
+      goldKillTomesEquippedAmount: 0,
     };
     // ! Temporary band-aid assurance, remove next update
     this.tomeSettings.spaceLimitWb = this.tomeSettings.spaceLimitWb ?? 6;
@@ -923,6 +924,7 @@ class Script {
     settingsContainer.querySelector('#legendarySpaceSetting').value = this.tomeSettings.spaceLimitLegendary;
     settingsContainer.querySelector('#numGoodRolls').value = this.tomeSettings.numGoodRolls;
     settingsContainer.querySelector('#ignoreNegativeRareLegendaryRolls').checked = this.tomeSettings.ignoreNegativeRareLegendary ?? false;
+    settingsContainer.querySelector('#goldPerKillForTomesEquipped').value = this.tomeSettings.goldKillTomesEquippedAmount ?? 0;
 
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
@@ -950,6 +952,7 @@ class Script {
         spaceLimitLegendary: container.querySelector('#legendarySpaceSetting').valueAsNumber,
         numGoodRolls: container.querySelector('#numGoodRolls').valueAsNumber,
         ignoreNegativeRareLegendary: container.querySelector('#ignoreNegativeRareLegendaryRolls').checked,
+        goldKillTomesEquippedAmount: container.querySelector('#goldPerKillForTomesEquipped').valueAsNumber,
       };
       // Sanitize inputs
       for (const [key, value] of Object.entries(tomeSettings)) {
