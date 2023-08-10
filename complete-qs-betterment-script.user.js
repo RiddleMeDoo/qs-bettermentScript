@@ -6,7 +6,7 @@
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
-// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/tomeSettingsMenu.html
+// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/highlightChestDrops/tomeSettingsMenu.html
 // @grant        GM_getResourceText
 // ==/UserScript==
 
@@ -55,6 +55,7 @@ class Script {
       villageActionSpeed: 0,
       actionTimerSeconds: 30,
     }
+    this.kdExploLevel = 0;
     this.playerId;
     this.gameData;
 
@@ -104,7 +105,7 @@ class Script {
     }
   }
 
-  async updateQuestData() {
+  async initPlayerData() {
     //Couldn't find an easier method to get quest completions than a POST request
     this.gameData.httpClient.post('/player/load/misc', {}).subscribe(
       val => {
@@ -129,6 +130,9 @@ class Script {
     }
     //Can't be bothered to calculate it accurately using all 4 stats
     this.quest.baseStat = Math.min(15, this.gameData.playerStatsService?.strength * 0.0025);
+
+    // Get kd exploration level for wb drops
+    this.updateKdInfo();
   }
 
   async getPartyActions() {
@@ -154,6 +158,16 @@ class Script {
     let villageService = this.gameData.playerVillageService;
     this.quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
     this.quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
+  }
+
+  async updateKdInfo() {
+    /** Only stores exploration information for wb drops */
+    let kdService = this.gameData.playerKingdomService;
+    // Wait for game to load data
+    while(kdService?.kingdomData?.exploration === undefined) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    this.kdExploLevel = kdService.kingdomData.exploration.level;
   }
 
   initObservers() {
@@ -430,17 +444,25 @@ class Script {
 
       // Create tooltips for gold/hr and emblems/hr
       const goldEle = mobOverviewEle.firstChild.children[1].firstChild.children[9].children[1];
-      const emblemsEle = mobOverviewEle.firstChild.children[1].firstChild.children[10].children[1];
-      const goldHr = parseInt(goldEle.innerText.replace(/,/g, '')) / this.catacomb.actionTimerSeconds * 3600;
+      const boostedGoldPerKill = parseInt(goldEle.innerText.replace(/,/g, ''));
+      const goldHr = boostedGoldPerKill / this.catacomb.actionTimerSeconds * 3600;
       goldEle.parentElement.setAttribute('title', `${goldHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
+
+      const emblemsEle = mobOverviewEle.firstChild.children[1].firstChild.children[10].children[1];
       const emblemsHr = parseInt(emblemsEle.innerText.replace(/,/g, '')) / totalMobs / this.catacomb.actionTimerSeconds * 3600;
       emblemsEle.parentElement.setAttribute('title', `${emblemsHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
 
       // Highlight start button if tomes are equipped
-      if (this.catacomb.tomesAreEquipped) {
-        const startCataButton = mobOverviewEle.nextSibling.firstChild;
+      const goldPerKillEle = mutation.target.parentElement.parentElement?.previousSibling?.children?.[9]?.firstElementChild;
+      if (!goldPerKillEle) return;  // Early return if element cannot be found, since mutations can come from anything
+      const baseGoldPerKill = parseInt(goldPerKillEle.innerText.replace(/,/g, ''));
+      const startCataButton = mobOverviewEle.nextSibling.firstChild;
+      if (this.catacomb.tomesAreEquipped && baseGoldPerKill < this.tomeSettings.goldKillTomesEquippedAmount) {
         startCataButton.style.boxShadow = '0px 0px 12px 7px red';
         startCataButton.style.color = 'red';
+      } else {
+        startCataButton.style.boxShadow = 'none';
+        startCataButton.style.color = '';
       }
     }
   }
@@ -599,6 +621,11 @@ class Script {
       const text = drop.innerText.split(' ');
       const dropType = text[text.length - 1].toLowerCase();
       if (dropType === 'gem' || dropType === 'description' || dropType === 'item' || dropType === 'tome') {
+        // Additional filters
+        if (!(dropType === 'gem' && parseInt(text[1]) >= this.kdExploLevel)) {
+          // Gem has to be higher level than kd exploration level
+          continue;
+        }
         // Highlight the element
         drop.style.backgroundColor = 'darkblue';
       }
@@ -1018,7 +1045,7 @@ window.restartQuesBS = () => { // Try to reload the game data for the script
 
     clearInterval(QuesBSLoader);
     await QuesBS.initPathDetection();
-    await QuesBS.updateQuestData();
+    await QuesBS.initPlayerData();
     await QuesBS.updateCatacombData();
   } else {
     await QuesBS?.getGameData();
