@@ -622,7 +622,7 @@ class Script {
       const dropType = text[text.length - 1].toLowerCase();
       if (dropType === 'gem' || dropType === 'description' || dropType === 'item' || dropType === 'tome') {
         // Additional filters
-        if (!(dropType === 'gem' && parseInt(text[1]) >= this.kdExploLevel)) {
+        if (dropType === 'gem' && parseInt(text[1]) < this.kdExploLevel) {
           // Gem has to be higher level than kd exploration level
           continue;
         }
