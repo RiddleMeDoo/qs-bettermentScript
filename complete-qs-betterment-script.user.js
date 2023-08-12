@@ -132,7 +132,7 @@ class Script {
     this.quest.baseStat = Math.min(15, this.gameData.playerStatsService?.strength * 0.0025);
 
     // Get kd exploration level for wb drops
-    this.updateKdInfo();
+    await this.updateKdInfo();
   }
 
   async getPartyActions() {
@@ -164,10 +164,10 @@ class Script {
     /** Only stores exploration information for wb drops */
     let kdService = this.gameData.playerKingdomService;
     // Wait for game to load data
-    while(kdService?.kingdomData?.exploration === undefined) {
+    while(kdService?.kingdomData?.explorations === undefined) {
       await new Promise(resolve => setTimeout(resolve, 200));
     }
-    this.kdExploLevel = kdService.kingdomData.exploration.level;
+    this.kdExploLevel = kdService.kingdomData.explorations.level;
   }
 
   initObservers() {
