@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.6.2
+// @version      1.6.3
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -564,21 +564,21 @@ class Script {
           tomeElement.children[3].style.border = `${isDouble ? 'thick' : '2px'} solid`;
           tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color ?? 'gold';
           
-          sumGoodRolls += isDouble ? 2 : 1;
+          sumGoodRolls += Math.floor(tomeMods.reward_multiplier / this.tomeSettings.highlightReward);
         }
         if (meetsMobDebuffRequirements) {
           const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob * 2;
           tomeElement.children[4].style.border = `${isDouble ? 'thick' : '2px'} solid`;
           tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color ?? 'white';
           
-          sumGoodRolls += isDouble ? 2 : 1;
+          sumGoodRolls += Math.floor(tomeMods.mob_multiplier / this.tomeSettings.highlightMob);
         }
         if (meetsCharacterMultiRequirements) {
           const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
           tomeElement.children[5].style.border = `${isDouble ? 'thick' : '2px'} solid`;
           tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color ?? 'white';
 
-          sumGoodRolls += isDouble ? 2 : 1;
+          sumGoodRolls += Math.floor(tomeMods.character_multiplier / this.tomeSettings.highlightCharacter);
         }
       }
 
