@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.6.3
+// @version      1.6.4
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -342,12 +342,12 @@ class Script {
       //There are two states: active quest and no quest
       if(tableBody.children.length > 2) {//No quest
         //Get the info row that goes at the bottom
-        infoRow = await this.insertEndTimeElem(tableBody, false, false);
+        infoRow = await this.modifyQuestInfo(tableBody, false, false);
 
       } else if(tableBody.children.length > 0) { //Active quest
         //Update number of refreshes used, just in case
         await this.updateRefreshes();
-        infoRow = await this.insertEndTimeElem(tableBody, false, true);
+        infoRow = await this.modifyQuestInfo(tableBody, false, true);
 
       } else {
         return;
@@ -385,9 +385,9 @@ class Script {
 
       //Add end time elems to the end time column
       if(tableBody.children.length > 2) { //Quest is not active
-        await this.insertEndTimeElem(tableBody, true, false);
+        await this.modifyQuestInfo(tableBody, true, false);
       } else { //Quest is active
-        await this.insertEndTimeElem(tableBody, true, true);
+        await this.modifyQuestInfo(tableBody, true, true);
       }
 
       //Add info text at the bottom of quest table
@@ -735,7 +735,7 @@ class Script {
     }
   }
 
-  async insertEndTimeElem(tableBody, isVillage, isActiveQuest) {
+  async modifyQuestInfo(tableBody, isVillage, isActiveQuest) {
     /* Returns info row because I suck at structure
     ** Also inserts the end time for each quest
     */
@@ -777,6 +777,7 @@ class Script {
         const currentMonster = this.gameData.playerActionService.selectedMonster;
         const baseGoldPerAction = 8 + 2 * currentMonster;
         const actionsNeeded = Math.ceil((objective - goldCollected) / baseGoldPerAction);
+        // Insert end time
         timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, isVillage);
         row.appendChild(timeElem);
 
@@ -784,6 +785,12 @@ class Script {
         const reward = row.children[2].innerText.split(' ')[0].replace(/,/g, '');
         const ratio = Math.round(parseInt(reward) / actionsNeeded).toLocaleString();
         row.children[2].innerText = `${row.children[2].innerText} (${ratio} exp/action)`;
+
+        // Replace exp requirement with action requirement
+        const actionsDone = Math.floor(goldCollected / baseGoldPerAction).toLocaleString();
+        const actionsLeft = Math.ceil(objective / baseGoldPerAction).toLocaleString();
+        row.children[1].innerText = `${actionsDone} / ${actionsLeft} actions (does not update)`;
+
         return await this.getQuestInfoElem(actionsNeeded);
 
       } else {
@@ -849,6 +856,8 @@ class Script {
           const reward = parseInt(row.children[1].innerText.split(' ')[0].replace(/,/g, ''));
           const ratio = Math.round(reward / actionsNeeded).toLocaleString();
           row.children[1].innerText = `${row.children[1].innerText} (${ratio} exp/action)`;
+          // Convert gold requirement to action requirement
+          row.children[0].innerText = `${actionsNeeded.toLocaleString()} actions`;
         }
         if(row.id !== 'questInfoRow'){
           const timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, false);
@@ -1003,7 +1012,7 @@ function getCatacombEndTime(numMobs, actionTimerSeconds, extraSeconds=0) {
     day: 'numeric',
     hour: 'numeric',
     minute: 'numeric',
-    hourCycle: 'h24',
+    hourCycle: 'h23',
   };
   const finishTime = new Date(current.getTime() + (numMobs * actionTimerSeconds + extraSeconds) * 1000)
                               .toLocaleString('en-US', options);
