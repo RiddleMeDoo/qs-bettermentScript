@@ -647,6 +647,12 @@ class Script {
         if (dropType === 'gem' && parseInt(text[1]) < this.kdExploLevel) {
           // Gem has to be higher level than kd exploration level
           continue;
+        } else if (dropType === 'gem' && parseInt(text[1].split('-')[1]) <= 25) {
+          // Description has to be max depth 26+
+          continue;
+        } else if (dropType === 'item' && parseInt(text[1]) < 20) {
+          // Fighter item needs to be at a good potential depth
+          continue;
         }
         // Highlight the element
         drop.style.backgroundColor = 'darkblue';
