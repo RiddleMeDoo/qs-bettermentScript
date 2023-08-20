@@ -215,6 +215,28 @@ class Script {
   }
 
 
+  async insertPlayerStatRatios() {
+    /* 
+     * Insert player stat ratios in the top menu bar of the page
+     */
+    let statBlockElem = document.querySelector('app-inventory-menu > div > div:nth-child(3)');
+    // Wait until page loads the element
+    while (!statBlockElem) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      statBlockElem = document.querySelector('app-inventory-menu > div > div:nth-child(3)');
+    }
+
+    const statRatios = getStatRatios(statBlockElem);
+    // Insert the stat ratios as a new column
+    for (let i = 0; i < statBlockElem.children.length; i++) {
+      const row = statBlockElem.children[i];
+      const statRatioDiv = document.createElement('div');
+      statRatioDiv.innerText = `(${statRatios[i]})`;
+      row.appendChild(statRatioDiv);
+    }
+  }
+
+
   async handlePathChange(url) {
     /**
      * Detects which page the player navigated to when the url path
@@ -1019,6 +1041,26 @@ function getCatacombEndTime(numMobs, actionTimerSeconds, extraSeconds=0) {
   return finishTime;
 }
 
+function getStatRatios(statBlockElem) {
+  /* Given an element statBlockElem containing rows of the 4 stats displayed at  
+  the top of the page, return the ratios between the stats
+  */
+  const stats = [];
+
+  for (let i = 0; i < statBlockElem.children.length; i++) {
+    const row = statBlockElem.children[i];
+    stats.push(parseInt(row.children[1].firstChild.innerText.replace(/,/g, '')));
+  }
+
+  const minStat = Math.min(...stats);
+  return [
+    (stats[0] / minStat).toFixed(2), 
+    (stats[1] / minStat).toFixed(2),
+    (stats[2] / minStat).toFixed(2),
+    (stats[3] / minStat).toFixed(2),
+  ];
+}
+
 // ----------------------------------------------------------------------------
 
 // This is where the script starts
@@ -1056,6 +1098,7 @@ window.restartQuesBS = () => { // Try to reload the game data for the script
     await QuesBS.initPathDetection();
     await QuesBS.initPlayerData();
     await QuesBS.updateCatacombData();
+    await QuesBS.insertPlayerStatRatios();
   } else {
     await QuesBS?.getGameData();
     console.log('QuesBS: Loading failed. Trying again...');
