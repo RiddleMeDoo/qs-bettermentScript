@@ -666,7 +666,7 @@ class Script {
         } else if (dropType === 'description' && parseInt(text[1].split('-')[1]) <= 25) {
           // Description has to be max depth 26+
           continue;
-        } else if (dropType === 'item' && parseInt(text[1]) < 20) {
+        } else if (dropType === 'item' && parseInt(text[1]) < 22) {
           // Fighter item needs to be at a good potential depth
           continue;
         }
