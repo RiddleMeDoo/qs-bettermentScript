@@ -25,25 +25,7 @@ class Script {
       minActions: 360,
       maxActions: 580,
     };
-    this.villageSettings = JSON.parse(localStorage.getItem('QuesBS_villageSettings')) ?? {
-      strActions: 30000
-    };
-    this.tomeSettings = JSON.parse(localStorage.getItem('QuesBS_tomeSettings')) ?? {
-      highlightReward: 99900,
-      highlightMob: 99900,
-      highlightCharacter: 99900,
-      highlightCharacterWb: 99900,
-      highlightElementalConv: 99900,
-      spaceLimitReward: 6,
-      spaceLimitMob: 6,
-      spaceLimitCharacter: 6,
-      spaceLimitWb: 6,
-      spaceLimitRare: 6,
-      spaceLimitLegendary: 6,
-      numGoodRolls: 1,
-      ignoreNegativeRareLegendary: false,
-      goldKillTomesEquippedAmount: 0,
-    };
+    
     // ! Temporary band-aid assurance, remove next update
     this.tomeSettings.spaceLimitWb = this.tomeSettings.spaceLimitWb ?? 6;
     this.tomeSettings.spaceLimitRare = this.tomeSettings.spaceLimitRare ?? 6;
@@ -62,6 +44,47 @@ class Script {
     //observer setup
     this.initObservers();
     this.currentPath = window.location.hash.split('/').splice(2).join();
+  }
+
+  loadDataFromStorage() {
+    /**
+     * Load data stored in the localStorage of the website. Each player stores their own settings.
+     */
+    // ! BANDAID migration, please remove non-id settings in storage after 2024-05-01
+    this.villageSettings = JSON.parse(localStorage.getItem(`${this.playerId}:QuesBS_villageSettings`));
+    if (!this.villageSettings && localStorage.getItem('QuesBS_villageSettings')) {
+      // Attempt migration from old settings
+      this.villageSettings = JSON.parse(localStorage.getItem('QuesBS_villageSettings'));
+      localStorage.setItem(`${this.playerId}:QuesBS_villageSettings`, JSON.stringify(this.villageSettings));
+    } else if(!this.villageSettings) {
+      this.villageSettings = {
+        strActions: 30000
+      };
+    }
+
+    this.tomeSettings = JSON.parse(localStorage.getItem(`${this.playerId}:QuesBS_tomeSettings`));
+    if (!this.tomeSettings && localStorage.getItem('QuesBS_tomeSettings')) {
+      // Attempt migration from old settings
+      this.tomeSettings = JSON.parse(localStorage.getItem('QuesBS_tomeSettings'));
+      localStorage.setItem(`${this.playerId}:QuesBS_tomeSettings`, JSON.stringify(this.tomeSettings));
+    } else if(!this.tomeSettings) {
+      this.tomeSettings = {
+        highlightReward: 99900,
+        highlightMob: 99900,
+        highlightCharacter: 99900,
+        highlightCharacterWb: 99900,
+        highlightElementalConv: 99900,
+        spaceLimitReward: 6,
+        spaceLimitMob: 6,
+        spaceLimitCharacter: 6,
+        spaceLimitWb: 6,
+        spaceLimitRare: 6,
+        spaceLimitLegendary: 6,
+        numGoodRolls: 1,
+        ignoreNegativeRareLegendary: false,
+        goldKillTomesEquippedAmount: 0,
+      };
+    }
   }
 
   async getGameData() { //ULTIMATE POWER
@@ -111,6 +134,7 @@ class Script {
       val => {
         this.quest.questsCompleted = val.playerMiscData.quests_completed;
         this.playerId = val.playerMiscData.player_id;
+        this.loadDataFromStorage();
       },
       response => console.log('QuesBS: POST request failure', response)
     );
@@ -943,7 +967,7 @@ class Script {
         this.gameData.snackbarService.openSnackbar('Error: Value should be a number'); //feedback popup
       } else {
         this.villageSettings.strActions = newActions;
-        localStorage.setItem('QuesBS_villageSettings', JSON.stringify(this.villageSettings));
+        localStorage.setItem(`${this.playerId}:QuesBS_villageSettings`, JSON.stringify(this.villageSettings));
         this.gameData.snackbarService.openSnackbar('Settings saved successfully'); //feedback popup
       }
     }
@@ -1038,7 +1062,7 @@ class Script {
       for (const [key, value] of Object.entries(tomeSettings)) {
         this.tomeSettings[key] = isNaN(value) ? this.tomeSettings[key] : value;
       }
-      localStorage.setItem('QuesBS_tomeSettings', JSON.stringify(this.tomeSettings));
+      localStorage.setItem(`${this.playerId}:QuesBS_tomeSettings`, JSON.stringify(this.tomeSettings));
       // Refresh highlighting
       const target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
       this.handleCatacombTomeStore({target: target[0]});
