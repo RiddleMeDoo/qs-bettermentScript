@@ -74,6 +74,10 @@ class Script {
         highlightCharacter: 99900,
         highlightCharacterWb: 99900,
         highlightElementalConv: 99900,
+        highlightMultiMob: 99900,
+        highlightLifesteal: 99900,
+        highlightActionSpeed: 99900,
+        highlightMobSkip: 99900,
         spaceLimitReward: 6,
         spaceLimitMob: 6,
         spaceLimitCharacter: 6,
@@ -1020,6 +1024,10 @@ class Script {
     settingsContainer.querySelector('#characterHighlightSetting').value = (this.tomeSettings.highlightCharacter / 100).toFixed(2);
     settingsContainer.querySelector('#characterWbHighlightSetting').value = (this.tomeSettings.highlightCharacterWb / 100).toFixed(2);
     settingsContainer.querySelector('#elementalConvHighlightSetting').value = (this.tomeSettings.highlightElementalConv / 100).toFixed(2);
+    settingsContainer.querySelector('#multiMobHighlightSetting').value = (this.tomeSettings.highlightMultiMob / 100).toFixed(2);
+    settingsContainer.querySelector('#lifestealHighlightSetting').value = (this.tomeSettings.highlightLifesteal / 100).toFixed(2);
+    settingsContainer.querySelector('#actionSpeedHighlightSetting').value = (this.tomeSettings.highlightActionSpeed / 100).toFixed(2);
+    settingsContainer.querySelector('#mobSkipHighlightSetting').value = (this.tomeSettings.highlightMobSkip / 100).toFixed(2);
     settingsContainer.querySelector('#rewardSpaceSetting').value = this.tomeSettings.spaceLimitReward;
     settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceLimitMob;
     settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceLimitCharacter;
@@ -1048,6 +1056,10 @@ class Script {
         highlightCharacter: container.querySelector('#characterHighlightSetting').valueAsNumber * 100,
         highlightCharacterWb: container.querySelector('#characterWbHighlightSetting').valueAsNumber * 100,
         highlightElementalConv: container.querySelector('#elementalConvHighlightSetting').valueAsNumber * 100,
+        highlightMultiMob: container.querySelector('#multiMobHighlightSetting').valueAsNumber * 100,
+        highlightLifesteal: container.querySelector('#lifestealHighlightSetting').valueAsNumber * 100,
+        highlightActionSpeed: container.querySelector('#actionSpeedHighlightSetting').valueAsNumber * 100,
+        highlightMobSkip: container.querySelector('#mobSkipHighlightSetting').valueAsNumber * 100,
         spaceLimitReward: container.querySelector('#rewardSpaceSetting').valueAsNumber,
         spaceLimitMob: container.querySelector('#mobSpaceSetting').valueAsNumber,
         spaceLimitCharacter: container.querySelector('#characterSpaceSetting').valueAsNumber,
