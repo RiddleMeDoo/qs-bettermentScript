@@ -218,26 +218,30 @@ class Script {
   }
 
 
-  async insertPlayerStatRatios() {
+  async insertPlayerStatRatios(petDiv) {
     /* 
-     * Insert player stat ratios in the top menu bar of the page
+     * Insert player stat ratios into the pet div by copy pasting from one of the existing
+     * boxes. 
      */
-    let statBlockElem = document.querySelector('app-inventory-menu > div > div:nth-child(3)');
-    // Wait until page loads the element
-    while (!statBlockElem) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      statBlockElem = document.querySelector('app-inventory-menu > div > div:nth-child(3)');
-    }
+    // Copy existing box to match the css style
+    const statBoxElem = petDiv.children[1].children[2].cloneNode(true);
 
-    const statRatios = getStatRatios(statBlockElem);
-    // Insert the stat ratios as a new column
-    for (let i = 0; i < statBlockElem.children.length; i++) {
-      const row = statBlockElem.children[i];
+    statBoxElem.firstChild.innerText = 'Player stat ratios';
+    const statsBody = statBoxElem.children[1];
+
+    const playerStatsElem = document.querySelector('app-inventory-menu > div > div:nth-child(3)');
+    const statRatios = getStatRatios(playerStatsElem);
+    // Insert the stat ratios
+    for (let i = 0; i < statRatios.length; i++) {
+      const row = statsBody.children[i].firstChild;
+      row.children[1].innerText = `${playerStatsElem.children[i].children[1].innerText}`;
       const statRatioDiv = document.createElement('div');
       statRatioDiv.innerText = `(${statRatios[i]})`;
-      statRatioDiv.style.marginLeft = '-1rem';
       row.appendChild(statRatioDiv);
     }
+
+    // Insert elem to be under the pet farm column
+    petDiv.children[2].appendChild(statBoxElem);
   }
 
 
@@ -334,6 +338,14 @@ class Script {
       this.wbDropsObserver.observe(target[0], {
         childList: true, subtree: false, attributes: false
       });
+    } else if (path[path.length - 1].toLowerCase() === 'pets' && path[0].toLowerCase() === 'actions') {
+      let target = $('app-actions-pets > .scrollbar > div > .d-flex');
+      while(target.length < 1) {
+        await new Promise(resolve => setTimeout(resolve, 200))
+        target = $('app-actions-pets > .scrollbar > div > .d-flex');
+      }
+      // Insert stat ratios on the pets page
+      await this.insertPlayerStatRatios(target[0]);
     }
   }
 
@@ -1107,7 +1119,6 @@ window.restartQuesBS = () => { // Try to reload the game data for the script
     clearInterval(QuesBSLoader);
     await QuesBS.initPathDetection();
     await QuesBS.initPlayerData();
-    await QuesBS.insertPlayerStatRatios();
   } else {
     await QuesBS?.getGameData();
     console.log('QuesBS: Loading failed. Trying again...');
