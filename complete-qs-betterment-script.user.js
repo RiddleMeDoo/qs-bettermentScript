@@ -131,6 +131,9 @@ class Script {
     //Can't be bothered to calculate it accurately using all 4 stats
     this.quest.baseStat = Math.min(15, this.gameData.playerStatsService?.strength * 0.0025);
 
+    // Get catacomb data
+    await this.updateCatacombData();
+
     // Get kd exploration level for wb drops
     await this.updateKdInfo();
   }
@@ -232,6 +235,7 @@ class Script {
       const row = statBlockElem.children[i];
       const statRatioDiv = document.createElement('div');
       statRatioDiv.innerText = `(${statRatios[i]})`;
+      statRatioDiv.style.marginLeft = '-1rem';
       row.appendChild(statRatioDiv);
     }
   }
@@ -647,7 +651,7 @@ class Script {
         if (dropType === 'gem' && parseInt(text[1]) < this.kdExploLevel) {
           // Gem has to be higher level than kd exploration level
           continue;
-        } else if (dropType === 'gem' && parseInt(text[1].split('-')[1]) <= 25) {
+        } else if (dropType === 'description' && parseInt(text[1].split('-')[1]) <= 25) {
           // Description has to be max depth 26+
           continue;
         } else if (dropType === 'item' && parseInt(text[1]) < 20) {
@@ -1103,7 +1107,6 @@ window.restartQuesBS = () => { // Try to reload the game data for the script
     clearInterval(QuesBSLoader);
     await QuesBS.initPathDetection();
     await QuesBS.initPlayerData();
-    await QuesBS.updateCatacombData();
     await QuesBS.insertPlayerStatRatios();
   } else {
     await QuesBS?.getGameData();
