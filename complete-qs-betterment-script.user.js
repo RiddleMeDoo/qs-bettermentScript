@@ -25,13 +25,6 @@ class Script {
       minActions: 360,
       maxActions: 580,
     };
-    
-    // ! Temporary band-aid assurance, remove next update
-    this.tomeSettings.spaceLimitWb = this.tomeSettings.spaceLimitWb ?? 6;
-    this.tomeSettings.spaceLimitRare = this.tomeSettings.spaceLimitRare ?? 6;
-    this.tomeSettings.spaceLimitLegendary = this.tomeSettings.spaceLimitLegendary ?? 6;
-    this.tomeSettings.highlightCharacterWb = this.tomeSettings.highlightCharacterWb ?? 99900;
-    this.tomeSettings.numGoodRolls = this.tomeSettings.numGoodRolls ?? 1;
 
     this.catacomb = {
       villageActionSpeed: 0,
@@ -89,6 +82,13 @@ class Script {
         goldKillTomesEquippedAmount: 0,
       };
     }
+
+    // ! More migration from v1.6.4, delete after 2024-05-01
+    this.tomeSettings.highlightCharacterWb = this.tomeSettings.highlightCharacterWb ?? 99900;
+    this.tomeSettings.highlightMultiMob = this.tomeSettings.highlightMultiMob ?? 99900;
+    this.tomeSettings.highlightLifesteal = this.tomeSettings.highlightLifesteal ?? 99900;
+    this.tomeSettings.highlightActionSpeed = this.tomeSettings.highlightActionSpeed ?? 99900;
+    this.tomeSettings.highlightMobSkip = this.tomeSettings.highlightMobSkip ?? 99900;
   }
 
   async getGameData() { //ULTIMATE POWER
@@ -278,7 +278,7 @@ class Script {
      * Detects which page the player navigated to when the url path
      * has changed, then activates the observer for the page.
      */
-    const path = url.split('/').slice(2);
+    const path = url.split('/').length == 2 ? url.split('/').slice(1) : url.split('/').slice(2);
     if(path.join() !== this.currentPath) {
       this.stopObserver(this.currentPath);
     }
@@ -711,6 +711,7 @@ class Script {
       'catacombs,catacomb': () => this.catacombObserver.disconnect(),
       'catacombs,tome_store': () => this.tomeObserver.disconnect(),
       'wb,chests': () => this.wbDropsObserver.disconnect(),
+      'path': () => this.initPlayerData(),
     }
     if(stop[pathname]) {
       stop[pathname]();
@@ -1028,13 +1029,13 @@ class Script {
     settingsContainer.querySelector('#lifestealHighlightSetting').value = (this.tomeSettings.highlightLifesteal / 100).toFixed(2);
     settingsContainer.querySelector('#actionSpeedHighlightSetting').value = (this.tomeSettings.highlightActionSpeed / 100).toFixed(2);
     settingsContainer.querySelector('#mobSkipHighlightSetting').value = (this.tomeSettings.highlightMobSkip / 100).toFixed(2);
-    settingsContainer.querySelector('#rewardSpaceSetting').value = this.tomeSettings.spaceLimitReward;
-    settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceLimitMob;
-    settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceLimitCharacter;
-    settingsContainer.querySelector('#wbSpaceSetting').value = this.tomeSettings.spaceLimitWb;
-    settingsContainer.querySelector('#rareSpaceSetting').value = this.tomeSettings.spaceLimitRare;
-    settingsContainer.querySelector('#legendarySpaceSetting').value = this.tomeSettings.spaceLimitLegendary;
-    settingsContainer.querySelector('#numGoodRolls').value = this.tomeSettings.numGoodRolls;
+    settingsContainer.querySelector('#rewardSpaceSetting').value = this.tomeSettings.spaceLimitReward ?? 6;
+    settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceLimitMob ?? 6;
+    settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceLimitCharacter ?? 6;
+    settingsContainer.querySelector('#wbSpaceSetting').value = this.tomeSettings.spaceLimitWb ?? 9;
+    settingsContainer.querySelector('#rareSpaceSetting').value = this.tomeSettings.spaceLimitRare ?? 9;
+    settingsContainer.querySelector('#legendarySpaceSetting').value = this.tomeSettings.spaceLimitLegendary ?? 9;
+    settingsContainer.querySelector('#numGoodRolls').value = this.tomeSettings.numGoodRolls ?? 1;
     settingsContainer.querySelector('#ignoreNegativeRareLegendaryRolls').checked = this.tomeSettings.ignoreNegativeRareLegendary ?? false;
     settingsContainer.querySelector('#goldPerKillForTomesEquipped').value = this.tomeSettings.goldKillTomesEquippedAmount ?? 0;
 
