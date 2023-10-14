@@ -6,7 +6,7 @@
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
-// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/tomeSettingsMenu.html
+// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/1-6-4_minor-improvements/tomeSettingsMenu.html
 // @grant        GM_getResourceText
 // ==/UserScript==
 
@@ -665,10 +665,9 @@ class Script {
   async handleWbChestOpening(mutation) {
     /**
      * Highlight drops that are desirable
-     * - Gems
-     * - Descriptions
-     * - Equipment
-     * - Tomes
+     * - Gems over the kd level
+     * - Descriptions with max depth 26+
+     * - Equipment with depth 23+
     **/
     // Check if first time opening chests on page
     if (mutation?.addedNodes?.[0]?.innerText && mutation.addedNodes[0].innerText.startsWith('After')) {
@@ -686,7 +685,7 @@ class Script {
     for (const drop of dropsList) {
       const text = drop.innerText.split(' ');
       const dropType = text[text.length - 1].toLowerCase();
-      if (dropType === 'gem' || dropType === 'description' || dropType === 'item' || dropType === 'tome') {
+      if (dropType === 'gem' || dropType === 'description' || dropType === 'item') {
         // Additional filters
         if (dropType === 'gem' && parseInt(text[1]) < this.kdExploLevel) {
           // Gem has to be higher level than kd exploration level
@@ -711,7 +710,7 @@ class Script {
       'catacombs,catacomb': () => this.catacombObserver.disconnect(),
       'catacombs,tome_store': () => this.tomeObserver.disconnect(),
       'wb,chests': () => this.wbDropsObserver.disconnect(),
-      'path': () => this.initPlayerData(),
+      'portal': () => this.initPlayerData(),
     }
     if(stop[pathname]) {
       stop[pathname]();
