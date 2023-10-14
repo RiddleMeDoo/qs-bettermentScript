@@ -17,8 +17,9 @@
 -   Adds an end time to catacombs
 -   Displays gold/hr and emblem/hr when hovering over a selected catacomb's total gold and emblems respectively.
 -   Adds coloured borders on tomes with boosts that reach a threshold, which can be adjusted on the tome store page.
+-   All script settings are separate per player account.
 -   Gives an angry red warning if you try to start a low gold catacomb with tomes equipped (it can be changed in the tome settings).
--   When opening World Boss keys it highlights fighter equipment, descriptions, tomes, and gems that are above the kingdom exploration level.
+-   When opening World Boss keys it highlights fighter equipment, descriptions, and gems that are above the kingdom exploration level.
 
 More features can be added upon request, just contact RiddleMeDoo in-game.
 
