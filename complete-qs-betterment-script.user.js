@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.6.4
+// @version      1.6.5
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -483,7 +483,7 @@ class Script {
 
     //Check if active or inactive view
     if (mainView.firstChild.nodeName === '#comment') { // Active view
-      const parentElement = mainView.firstElementChild.firstChild.firstChild;
+      const parentElement = mainView.firstElementChild.firstChild.firstChild.firstChild;
       const mobText = parentElement.firstChild.firstChild.firstChild.children[1].innerText;
       const totalMobs = parseInt(mobText.split(' ')[2].replace(/,/g, ''));
       const mobsKilled = parseInt(mobText.split(' ')[0].replace(/,/g, ''));
