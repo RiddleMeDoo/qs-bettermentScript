@@ -67,10 +67,10 @@ class Script {
         highlightCharacter: 99900,
         highlightCharacterWb: 99900,
         highlightElementalConv: 99900,
-        highlightMultiMob: 99900,
-        highlightLifesteal: 99900,
-        highlightActionSpeed: 99900,
-        highlightMobSkip: 99900,
+        highlightMultiMob: 1,
+        highlightLifesteal: 1,
+        highlightActionSpeed: 1,
+        highlightMobSkip: 1,
         spaceLimitReward: 6,
         spaceLimitMob: 6,
         spaceLimitCharacter: 6,
@@ -85,10 +85,10 @@ class Script {
 
     // ! More migration from v1.6.4, delete after 2024-05-01
     this.tomeSettings.highlightCharacterWb = this.tomeSettings.highlightCharacterWb ?? 99900;
-    this.tomeSettings.highlightMultiMob = this.tomeSettings.highlightMultiMob ?? 99900;
-    this.tomeSettings.highlightLifesteal = this.tomeSettings.highlightLifesteal ?? 99900;
-    this.tomeSettings.highlightActionSpeed = this.tomeSettings.highlightActionSpeed ?? 99900;
-    this.tomeSettings.highlightMobSkip = this.tomeSettings.highlightMobSkip ?? 99900;
+    this.tomeSettings.highlightMultiMob = this.tomeSettings.highlightMultiMob ?? 1;
+    this.tomeSettings.highlightLifesteal = this.tomeSettings.highlightLifesteal ?? 1;
+    this.tomeSettings.highlightActionSpeed = this.tomeSettings.highlightActionSpeed ?? 1;
+    this.tomeSettings.highlightMobSkip = this.tomeSettings.highlightMobSkip ?? 1;
   }
 
   async getGameData() { //ULTIMATE POWER
@@ -346,10 +346,10 @@ class Script {
     } else if (path[path.length - 1].toLowerCase() === 'tome_store' && path[0].toLowerCase() === 'catacombs') {
       await this.modifyTomeStorePage();
 
-      let target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
+      let target = $('app-catacomb-tome-store > div > div > div.base-scrollbar > div');
       while(target.length < 1) {
         await new Promise(resolve => setTimeout(resolve, 200))
-        target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
+        target = $('app-catacomb-tome-store > div > div > div.base-scrollbar > div');
       }
 
       this.tomeObserver.observe(target[0], {
@@ -548,7 +548,7 @@ class Script {
       return;
     }
     // Get store element and tome store data
-    const tomeElements = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1 > div');
+    const tomeElements = $('app-catacomb-tome-store > div > div > div.base-scrollbar > div > div');
     let tomes = this.gameData.playerCatacombService?.tomeStore;
     while (this.gameData.playerCatacombService === undefined || tomes === undefined) {
       await new Promise(resolve => setTimeout(resolve, 200))
@@ -565,11 +565,12 @@ class Script {
       // Requirements are checked here since they're very long
       const hasNegativeRareLegendaryRolls = tomeMods.lifesteal < 0 || tomeMods.multi_mob < 0 
                                             || tomeMods.speed < 0 || tomeMods.skip < 0;
-      const meetsRareLegendaryRequirements = (
-        (tomeMods.lifesteal > 0 || tomeMods.multi_mob > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceLimitRare) 
-        || (
-          (tomeMods.speed > 0 || tomeMods.skip > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceLimitLegendary
-        );
+      const meetsRareRequirements = (
+        (tomeMods.lifesteal > 0 || tomeMods.multi_mob > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceLimitRare
+      );
+      const meetsLegendaryRequirements = (
+        (tomeMods.speed > 0 || tomeMods.skip > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceLimitLegendary
+      );
       
       const meetsWbTomeRequirements = 
         tomeMods.space_requirement <= this.tomeSettings.spaceLimitWb 
@@ -615,14 +616,13 @@ class Script {
 
       // Highlight other modifiers if they meet the requirements
       if (!hasNegativeRareLegendaryRolls || this.tomeSettings.ignoreNegativeRareLegendary) { 
-        if (meetsRareLegendaryRequirements) {
-          sumGoodRolls += [
-            tomeMods.lifesteal > 0, 
-            tomeMods.multi_mob > 0,
-            tomeMods.speed > 0,
-            tomeMods.skip > 0
-          ].filter(Boolean).length;
-          shouldFadeTome = false;
+        if (meetsRareRequirements) {
+          sumGoodRolls += tomeMods.lifesteal > 0 ? Math.floor(tomeMods.lifesteal / this.tomeSettings.highlightLifesteal) : 0;
+          sumGoodRolls += tomeMods.multi_mob > 0 ? Math.floor(tomeMods.multi_mob / this.tomeSettings.highlightMultiMob) : 0;
+        }
+        if (meetsLegendaryRequirements) {
+          sumGoodRolls += tomeMods.speed > 0 ? Math.floor(tomeMods.speed / this.tomeSettings.highlightActionSpeed) : 0;
+          sumGoodRolls += tomeMods.skip > 0 ? Math.floor(tomeMods.skip / this.tomeSettings.highlightMobSkip) : 0;
         }
 
         if (meetsRewardMultiRequirements) {
@@ -980,29 +980,13 @@ class Script {
   
   async modifyTomeStorePage() {
     /**
-     * Inserts a custom popup menu for tome settings and moves the refresh button to the top
-     * Moving the refresh button code was contributed from Ender
+     * Inserts a custom popup menu for tome settings
      */  
     //Get store page contents
     let tomeStoreOverview = document.querySelector('app-catacomb-tome-store');
     while(!tomeStoreOverview) {
       await new Promise(resolve => setTimeout(resolve, 50));
       tomeStoreOverview = document.querySelector('app-catacomb-tome-store');
-    }
-
-    // Position "Refresh Store" button so it doesnt move around when the amount of tomes is greater than 5
-    const refreshStoreButton = $('app-catacomb-tome-store > .scrollbar > .d-flex.justify-content-around > .my-auto');
-    if (refreshStoreButton[0]) {
-      refreshStoreButton[0].className = refreshStoreButton[0].className + ' light-background-border'; 
-      refreshStoreButton[0].style.padding = '1px 0.5rem 0px 0.5rem';
-      refreshStoreButton[0].style.position = 'absolute';
-      refreshStoreButton[0].style.top = '-1%';
-      refreshStoreButton[0].style.right = '-1%';
-      refreshStoreButton[0].style.fontSize = '12px';
-      // Create empty div to fill in the space left behind
-      const emptyDiv = document.createElement('div')
-      emptyDiv.style.width = '35%';
-      refreshStoreButton[0].parentElement.appendChild(emptyDiv);
     }
 
     // Create settings menu
@@ -1015,7 +999,8 @@ class Script {
     openTomeSettingsbutton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
     openTomeSettingsbutton.innerText = 'QuesBS Tome Settings';
     settings.insertBefore(openTomeSettingsbutton, settings.childNodes[0]);
-    tomeStoreOverview.firstChild.appendChild(settings);
+    const topStoreBar = tomeStoreOverview.firstChild.firstChild;
+    topStoreBar.insertBefore(settings, topStoreBar.firstChild);
 
     // Fill in input values
     const settingsContainer = settings.childNodes[1];
