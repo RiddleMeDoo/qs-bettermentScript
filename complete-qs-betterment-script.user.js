@@ -993,6 +993,7 @@ class Script {
     const settings = document.createElement('div');
     settings.id = 'highlightTomeSettings';
     settings.style.margin = '1rem';
+    settings.style.position = 'relative';
     settings.innerHTML = GM_getResourceText('settingsMenu');
     const openTomeSettingsbutton = document.createElement('button');
     openTomeSettingsbutton.id = 'openTomeSettingsButton';
