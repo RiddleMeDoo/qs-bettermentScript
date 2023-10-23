@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.6.5
+// @version      1.6.6
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -485,9 +485,9 @@ class Script {
     if (mainView.firstChild.nodeName === '#comment') { // Active view
       const parentElement = mainView.firstElementChild.firstChild.firstChild.firstChild;
       const mobText = parentElement.firstChild.firstChild.firstChild.children[1].innerText;
-      const totalMobs = parseInt(mobText.split(' ')[2].replace(/,/g, ''));
-      const mobsKilled = parseInt(mobText.split(' ')[0].replace(/,/g, ''));
-      const secondsLeft = parseInt(parentElement.children[1].innerText.replace(/,/g, ''));
+      const totalMobs = parseNumber(mobText.split(' ')[2]);
+      const mobsKilled = parseNumber(mobText.split(' ')[0]);
+      const secondsLeft = parseNumber(parentElement.children[1].innerText);
 
       // Create the end time ele to insert into
       const endTimeEle = document.getElementById('catacombEndTime') ?? document.createElement('div');
@@ -499,7 +499,7 @@ class Script {
 
     } else { // Inactive view
       const mobOverviewEle = mainView.firstChild.children[1].firstChild.firstChild;
-      const totalMobs = parseInt(mobOverviewEle.firstChild.children[1].firstChild.children[11].children[1].innerText.replace(/,/g, ''));
+      const totalMobs = parseNumber(mobOverviewEle.firstChild.children[1].firstChild.children[11].children[1].innerText);
       const cataTierSelectionEle = mobOverviewEle.children[1];
 
       // Create the end time ele to insert into
@@ -510,18 +510,18 @@ class Script {
 
       // Create tooltips for gold/hr and emblems/hr
       const goldEle = mobOverviewEle.firstChild.children[1].firstChild.children[9].children[1];
-      const boostedGoldPerKill = parseInt(goldEle.innerText.replace(/,/g, ''));
+      const boostedGoldPerKill = parseNumber(goldEle.innerText);
       const goldHr = boostedGoldPerKill / this.catacomb.actionTimerSeconds * 3600;
       goldEle.parentElement.setAttribute('title', `${goldHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
 
       const emblemsEle = mobOverviewEle.firstChild.children[1].firstChild.children[10].children[1];
-      const emblemsHr = parseInt(emblemsEle.innerText.replace(/,/g, '')) / totalMobs / this.catacomb.actionTimerSeconds * 3600;
+      const emblemsHr = parseNumber(emblemsEle.innerText) / totalMobs / this.catacomb.actionTimerSeconds * 3600;
       emblemsEle.parentElement.setAttribute('title', `${emblemsHr.toLocaleString(undefined, {maximumFractionDigits:2})}/Hr`);
 
       // Highlight start button if tomes are equipped
       const goldPerKillEle = mutation.target.parentElement.parentElement?.previousSibling?.children?.[9]?.firstElementChild;
       if (!goldPerKillEle) return;  // Early return if element cannot be found, since mutations can come from anything
-      const baseGoldPerKill = parseInt(goldPerKillEle.innerText.replace(/,/g, ''));
+      const baseGoldPerKill = parseNumber(goldPerKillEle.innerText);
       const startCataButton = mobOverviewEle.nextSibling.firstChild;
       if (this.catacomb.tomesAreEquipped && baseGoldPerKill < this.tomeSettings.goldKillTomesEquippedAmount) {
         startCataButton.style.boxShadow = '0px 0px 12px 7px red';
@@ -687,13 +687,13 @@ class Script {
       const dropType = text[text.length - 1].toLowerCase();
       if (dropType === 'gem' || dropType === 'description' || dropType === 'item') {
         // Additional filters
-        if (dropType === 'gem' && parseInt(text[1]) < this.kdExploLevel) {
+        if (dropType === 'gem' && parseNumber(text[1]) < this.kdExploLevel) {
           // Gem has to be higher level than kd exploration level
           continue;
-        } else if (dropType === 'description' && parseInt(text[1].split('-')[1]) <= 25) {
+        } else if (dropType === 'description' && parseNumber(text[1].split('-')[1]) <= 25) {
           // Description has to be max depth 26+
           continue;
-        } else if (dropType === 'item' && parseInt(text[1]) < 22) {
+        } else if (dropType === 'item' && parseNumber(text[1]) < 22) {
           // Fighter item needs to be at a good potential depth
           continue;
         }
@@ -818,8 +818,8 @@ class Script {
       const objectiveElemText = row?.children[1].innerText.split(' ');
       let timeElem;
       if(objectiveElemText[3].toLowerCase() === 'actions' || objectiveElemText[3].toLowerCase() === 'survived') {
-        const actionsDone = parseInt(objectiveElemText[0]);
-        const objective = parseInt(objectiveElemText[2]);
+        const actionsDone = parseNumber(objectiveElemText[0]);
+        const objective = parseNumber(objectiveElemText[2]);
         const reward = row.children[2].innerText.split(' ');
         let actionsNeeded = -1;
 
@@ -844,8 +844,8 @@ class Script {
         return await this.getQuestInfoElem(actionsNeeded);
 
       } else if(objectiveElemText[3].toLowerCase() === 'base') { //Special case: Exp reward quest
-        const goldCollected = parseInt(objectiveElemText[0]);
-        const objective = parseInt(objectiveElemText[2]);
+        const goldCollected = parseNumber(objectiveElemText[0]);
+        const objective = parseNumber(objectiveElemText[2]);
         const currentMonster = this.gameData.playerActionService.selectedMonster;
         const baseGoldPerAction = 8 + 2 * currentMonster;
         const actionsNeeded = Math.ceil((objective - goldCollected) / baseGoldPerAction);
@@ -855,7 +855,7 @@ class Script {
 
         //Add ratio
         const reward = row.children[2].innerText.split(' ')[0].replace(/,/g, '');
-        const ratio = Math.round(parseInt(reward) / actionsNeeded).toLocaleString();
+        const ratio = Math.round(parseNumber(reward) / actionsNeeded).toLocaleString();
         row.children[2].innerText = `${row.children[2].innerText} (${ratio} exp/action)`;
 
         // Replace exp requirement with action requirement
@@ -882,11 +882,11 @@ class Script {
         if(objectiveText[1] === 'actions') {
           //Add border if there's a str point reward
           const reward = row.children[2].innerText.split(' ')[1];
-          if(reward === 'strength' && parseInt(objectiveText[0]) <= this.villageSettings.strActions) {
+          if(reward === 'strength' && parseNumber(objectiveText[0]) <= this.villageSettings.strActions) {
             row.children[2].style.border = 'inset';
           }
           //Insert end time
-          const objective = parseInt(objectiveText[0]);
+          const objective = parseNumber(objectiveText[0]);
           timeElem = this.getTimeElem(objective, row.firstChild.className, true);
         } else {
           timeElem = this.getTimeElem(-1, row.firstChild.className, true);
@@ -907,25 +907,25 @@ class Script {
         if(availableQuests[i].type === 'swordsman' || availableQuests[i].type === 'tax' ||
           availableQuests[i].type === 'gems' || availableQuests[i].type === 'spell') {
           //Above are the quests that require actions to be done
-          actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
+          actionsNeeded = parseNumber(availableQuests[i].objective.split(' ')[0]);
 
         } else if(availableQuests[i].type === 'treasure') {
-          actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
+          actionsNeeded = parseNumber(availableQuests[i].objective.split(' ')[0]);
           //Insert a gold ratio
-          const reward = parseInt(availableQuests[i].reward.split(' ')[0].replace(/,/g, ''));
+          const reward = parseNumber(availableQuests[i].reward.split(' ')[0]);
           const ratio = Math.round(reward / actionsNeeded * 600).toLocaleString();
           row.children[1].innerText = `${row.children[1].innerText} (${ratio} gold/hr)`;
 
         } else if(availableQuests[i].type === 'slow') {
           //Convert 7 second actions to 6 second actions
-          actionsNeeded = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, '')) * 7 / 6;
+          actionsNeeded = parseNumber(availableQuests[i].objective.split(' ')[0]) * 7 / 6;
 
         } else if(availableQuests[i].type === 'friend') { //Base gold objective
-          const goldObjective = parseInt(availableQuests[i].objective.split(' ')[0].replace(/,/g, ''));
+          const goldObjective = parseNumber(availableQuests[i].objective.split(' ')[0]);
           const currentMonster = this.gameData.playerActionService.selectedMonster;
           actionsNeeded = Math.ceil(goldObjective / (8 + 2 * currentMonster));
           //Insert a exp ratio
-          const reward = parseInt(row.children[1].innerText.split(' ')[0].replace(/,/g, ''));
+          const reward = parseNumber(row.children[1].innerText.split(' ')[0]);
           const ratio = Math.round(reward / actionsNeeded).toLocaleString();
           row.children[1].innerText = `${row.children[1].innerText} (${ratio} exp/action)`;
           // Convert gold requirement to action requirement
@@ -965,7 +965,7 @@ class Script {
     questSettings.firstChild.children[2].firstChild.firstChild.innerText = 'Save QuesBS Quests';
     //Add a save function for button
     questSettings.firstChild.children[2].firstChild.onclick = () => {
-      const newActions = parseInt(document.getElementById('actionsLimitSetting').firstChild.value);
+      const newActions = parseNumber(document.getElementById('actionsLimitSetting').firstChild.value);
       //Data validation
       if(isNaN(newActions)) {
         this.gameData.snackbarService.openSnackbar('Error: Value should be a number'); //feedback popup
@@ -1093,7 +1093,7 @@ function getStatRatios(statBlockElem) {
 
   for (let i = 0; i < statBlockElem.children.length; i++) {
     const row = statBlockElem.children[i];
-    stats.push(parseInt(row.children[1].firstChild.innerText.replace(/,/g, '')));
+    stats.push(parseNumber(row.children[1].firstChild.innerText));
   }
 
   const minStat = Math.min(...stats);
@@ -1103,6 +1103,34 @@ function getStatRatios(statBlockElem) {
     (stats[2] / minStat).toFixed(2),
     (stats[3] / minStat).toFixed(2),
   ];
+}
+
+function parseNumber(num) {
+  /**
+   * Given a num (string), detect the type of number formatting it uses and then
+   * convert it to the type Number. 
+  **/
+  // First strip any commas
+  const resultNumStr = num.replace(/,/g, '');
+  if (!isNaN(Number(resultNumStr))) {  // This can also convert exponential notation
+    return Number(resultNumStr);
+  }
+
+  // Check if string has suffix
+  const suffixes = ["k", "m", "b", "t", "qa", "qi", "sx", "sp"];
+  const suffixMatch = resultNumStr.match(/[a-z]+\b/g);
+  if (suffixMatch) {
+    const suffix = suffixMatch[0];
+    const shortenedNum = parseFloat(resultNumStr.match(/[0-9.]+/g)[0]);
+
+    const multiplier = 1000 ** (suffixes.findIndex(e => e === suffix) + 1)
+    if (multiplier < 1000) {
+      console.log('QuesBS: ERROR, number\'s suffix not found in existing list');
+      return 0;
+    } else {
+      return shortenedNum * multiplier;
+    }
+  }
 }
 
 // ----------------------------------------------------------------------------
