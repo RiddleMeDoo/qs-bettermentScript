@@ -127,7 +127,7 @@ class Script {
 
     this.catacomb = {
       villageActionSpeed: villageActionSpeedBoost,
-      actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100),
+      actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100) + 0.2,
       tomesAreEquipped: tomes.mobs > 0,
     }
   }
