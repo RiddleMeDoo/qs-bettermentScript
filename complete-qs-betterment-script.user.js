@@ -681,24 +681,30 @@ class Script {
 
 
     // Get list of drops
-    const dropsList = document.querySelector('app-game-world-boss-chest-drops').children;
-    for (const drop of dropsList) {
-      const text = drop.innerText.split(' ');
+    const dropsCategories = document.querySelector('app-game-world-boss-chest-drops').children;
+    for (const category of dropsCategories) {
+      const text = category.innerText.split(' ');
       const dropType = text[text.length - 1].toLowerCase();
       if (dropType === 'gem' || dropType === 'description' || dropType === 'item') {
-        // Additional filters
-        if (dropType === 'gem' && parseNumber(text[1]) < this.kdExploLevel) {
-          // Gem has to be higher level than kd exploration level
-          continue;
-        } else if (dropType === 'description' && parseNumber(text[1].split('-')[1]) <= 25) {
-          // Description has to be max depth 26+
-          continue;
-        } else if (dropType === 'item' && parseNumber(text[1]) < 22) {
-          // Fighter item needs to be at a good potential depth
-          continue;
+        // They are grouped together in an inner list, so extract the inner list
+        const dropList = category.firstElementChild.children;
+
+        for (const drop of dropList) {
+          const text = drop.innerText.split(' ');
+          // Additional filters
+          if (dropType === 'gem' && parseNumber(text[1]) < this.kdExploLevel) {
+            // Gem has to be higher level than kd exploration level
+            continue;
+          } else if (dropType === 'description' && parseNumber(text[1].split('-')[1]) <= 25) {
+            // Description has to be max depth 26+
+            continue;
+          } else if (dropType === 'item' && parseNumber(text[1]) < 23) {
+            // Fighter item needs to be at a good potential depth
+            continue;
+          }
+          // Highlight the element
+          drop.style.backgroundColor = 'darkblue';
         }
-        // Highlight the element
-        drop.style.backgroundColor = 'darkblue';
       }
     }
   }
