@@ -108,7 +108,7 @@ class Script {
 
   async updateCatacombData() {
     /***
-     * Returns Observatory boost, action timer in seconds
+     * Updates catacomb action timer in seconds and equipped tomes indicator 
     ***/
     // Wait until services load
     while(this.gameData?.playerCatacombService === undefined || this.gameData?.playerVillageService === undefined) {
@@ -143,13 +143,13 @@ class Script {
 
   async initPlayerData() {
     // Make sure gameData is loaded before initializing player data
-    let loadingTries = 600;
+    let loadingTries = 300;
     while ((!this.gameData || this.gameData.loadingService.loading) && loadingTries > 0) {
       if (!this.gameData) {
         this.getGameData();
       }
       console.log('QuesBS: Waiting for game to load...');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       loadingTries--;
     }
 
@@ -505,10 +505,11 @@ class Script {
     //Check if active or inactive view
     if (mainView.firstChild.nodeName === '#comment') { // Active view
       const parentElement = mainView.firstElementChild.firstChild.firstChild.firstChild;
-      const mobText = parentElement.firstChild.firstChild.firstChild.children[1].innerText;
-      const totalMobs = parseNumber(mobText.split(' ')[2]);
-      const mobsKilled = parseNumber(mobText.split(' ')[0]);
       const secondsLeft = parseNumber(parentElement.children[1].innerText);
+      // Use api data
+      const totalMobs = this.gameData.playerCatacombService.actionData.catacombStats.mobCount;
+      const mobsKilled = this.gameData.playerCatacombService.actionData.catacombStats.killCount;
+
 
       // Create the end time ele to insert into
       const endTimeEle = document.getElementById('catacombEndTime') ?? document.createElement('div');
