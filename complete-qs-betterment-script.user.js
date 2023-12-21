@@ -27,8 +27,8 @@ class Script {
     };
 
     this.catacomb = {
-      villageActionSpeed: 0,
       actionTimerSeconds: 30,
+      tomesAreEquipped: true,
     }
     this.kdExploLevel = 0;
     this.playerId;
@@ -115,19 +115,28 @@ class Script {
       await new Promise(resolve => setTimeout(resolve, 200));
     }
     const tomes = this.gameData.playerCatacombService.calculateTomeOverview();
-    const villageService = this.gameData.playerVillageService;
 
-    let villageActionSpeedBoost;
-    if (villageService?.isInVillage === true) {
-      const level = villageService?.buildings?.observatory?.amount ?? 0;
-      villageActionSpeedBoost = (Math.floor(level / 20) * Math.floor(level / 20 + 1) / 2 * 20 + (level % 20) * Math.floor(level / 20 + 1)) / 100;
+    // Calculate catacomb action speed in seconds
+    let actionTimerSeconds = 24;
+    if (this.gameData.playerCatacombService.actionData) {
+      // If a catacomb is active, it will show how many seconds it has in an action
+      actionTimerSeconds = this.gameData.playerCatacombService.actionData.actionSpeed;
     } else {
-      villageActionSpeedBoost = 0;
+      // If a catacomb is inactive, actionData is undefined. Manually calculate
+      const villageService = this.gameData.playerVillageService;
+      
+      let villageActionSpeedBoost;
+      if (villageService?.isInVillage === true) {
+        const level = villageService?.buildings?.observatory?.amount ?? 0;
+        villageActionSpeedBoost = (Math.floor(level / 20) * Math.floor(level / 20 + 1) / 2 * 20 + (level % 20) * Math.floor(level / 20 + 1)) / 100;
+      } else {
+        villageActionSpeedBoost = 0;
+      }
+      actionTimerSeconds = 30 / (1 + villageActionSpeedBoost + tomes.speed / 100) + 0.2
     }
 
     this.catacomb = {
-      villageActionSpeed: villageActionSpeedBoost,
-      actionTimerSeconds: 30 / (1 + villageActionSpeedBoost + tomes.speed / 100) + 0.2,
+      actionTimerSeconds: actionTimerSeconds,
       tomesAreEquipped: tomes.mobs > 0,
     }
   }
@@ -334,6 +343,8 @@ class Script {
       await this.insertVillageSettingsElem();
 
     } else if(path[path.length - 1].toLowerCase() === 'catacomb' && path[0].toLowerCase() === 'catacombs') {
+      this.updateCatacombData();
+
       let target = document.querySelector('app-catacomb-main')?.firstChild;
       while(!target) {
         await new Promise(resolve => setTimeout(resolve, 200))
@@ -345,14 +356,9 @@ class Script {
         this.catacombObserver.observe(target.parentElement, {
           childList: true, subtree: false, attributes: false,
         });
-
-        // Get updated catacomb data before handing it off
-        this.updateCatacombData(); // ! This might cause some issues with concurrency
         this.handleCatacombPage({target: target});
 
       } else {
-        // Get updated catacomb data before handing it off
-        this.updateCatacombData(); // ! This might cause some issues with concurrency
         this.catacombObserver.observe(target, {
           childList: true, subtree: true, attributes: false,
         });
