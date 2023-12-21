@@ -1,0 +1,137 @@
+<div id="tomeSettingsContainer" class="tooltip-container" 
+  style="position: absolute; width: 250%; max-height:25rem; z-index:1; overflow:scroll; display: none;"
+>
+  <div class="item-card light-background-border p-2 m-1 d-flex" style="width: 100%;">
+    <form style="width: inherit">
+      <!-- Regular tome settings -->
+      <details>
+        <summary style="text-align: center;">
+          Regular Tomes Setting
+        </summary>
+        <div style="display: flex; justify-content: space-around;">
+          <div style="width: 40%">
+            <label for="rewardHighlightSetting">Reward %:</label>
+            <input type="number" id="rewardHighlightSetting" value="" placeholder="150.00" style="width: 100%">
+          </div>
+          <div style="width: 40%" style="justify-content: space-around;">
+            <label for="rewardSpaceSetting">Max space:</label>
+            <input type="number" id="rewardSpaceSetting" value="" placeholder="6" style="width: 100%">
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-around;">
+          <div style="width: 40%">
+            <label for="mobHighlightSetting">Mob Debuff %:</label>
+            <input type="number" id="mobHighlightSetting" value="" placeholder="150.00" style="width: 100%">
+          </div>
+          <div style="width: 40%">
+            <label for="mobSpaceSetting">Max space:</label>
+            <input type="number" id="mobSpaceSetting" value="" placeholder="6" style="width: 100%">
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-around;">
+          <div style="width: 40%">
+            <label for="characterHighlightSetting">Character %:</label>
+            <input type="number" id="characterHighlightSetting" value="" placeholder="150.00" style="width: 100%">
+          </div>
+          <div style="width: 40%">
+            <label for="characterSpaceSetting">Max space:</label>
+            <input type="number" id="characterSpaceSetting" value="" placeholder="6" style="width: 100%">
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-around;">
+          <div style="display: inherit; justify-content: center; margin: 0.5rem;">
+            <label for="numGoodRolls">Minimum number of good rolls:</label>
+            <input type="number" id="numGoodRolls" value="" placeholder="1" style="width: 15%; margin-left: 0.5rem">
+          </div>
+        </div>
+      </details>
+      
+      <!-- Rare/Legendary roll settings -->
+      <details>
+        <summary style="text-align: center;">
+          Rare/Legendary Rolls Setting
+        </summary>
+        <div style="display: flex; justify-content: space-around;">
+          <div style="width: 40%">
+            <label for="rareSpaceSetting">Rare max space:</label>
+            <input type="number" id="rareSpaceSetting" value="" placeholder="6" style="width: 100%">
+          </div>
+          <div style="width: 40%">
+            <label for="legendarySpaceSetting">Legendary max space:</label>
+            <input type="number" id="legendarySpaceSetting" value="" placeholder="6" style="width: 100%">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-around;">
+          <div style="width: 40%">
+            <label for="multiMobHighlightSetting">Multi mob %:</label>
+            <input type="number" id="multiMobHighlightSetting" value="" placeholder="150.00" style="width: 100%">
+          </div>
+          <div style="width: 40%">
+            <label for="lifestealHighlightSetting">Lifesteal %:</label>
+            <input type="number" id="lifestealHighlightSetting" value="" placeholder="150.00" style="width: 100%">
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-around;">
+          <div style="width: 40%">
+            <label for="actionSpeedHighlightSetting">Action speed %:</label>
+            <input type="number" id="actionSpeedHighlightSetting" value="" placeholder="150.00" style="width: 100%">
+          </div>
+          <div style="width: 40%">
+            <label for="mobSkipHighlightSetting">Mob skip %:</label>
+            <input type="number" id="mobSkipHighlightSetting" value="" placeholder="150.00" style="width: 100%">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: center; margin: 0.5rem;">
+          <input type="checkbox" id="ignoreNegativeRareLegendaryRolls">
+          <label for="ignoreNegativeRareLegendaryRolls">Highlight tomes with negative rolls</label>
+        </div>
+      </details>
+
+      <!-- World boss settings -->
+      <details>
+        <summary style="text-align: center;">
+          World Boss Tomes Setting
+        </summary>
+        <div style="display: flex; justify-content: space-around; align-items: flex-end;">
+          <div>
+            <label for="characterWbHighlightSetting">Character %:</label>
+            <input type="number" id="characterWbHighlightSetting" value="" placeholder="150.00" style="width: 70%">
+          </div>
+          <div>
+            <label for="elementalConvHighlightSetting">Elemental Conv %:</label>
+            <input type="number" id="elementalConvHighlightSetting" value="" placeholder="150.00" style="width: 70%">
+          </div>
+          <div>
+            <label for="wbSpaceSetting">Max space requirement:</label>
+            <input type="number" id="wbSpaceSetting" value="" placeholder="6" style="width: 70%">
+          </div>
+        </div>
+        <p style="text-align: center;">These will only highlight double rolls</p>
+      </details>
+
+      <details>
+        <summary style="text-align: center;">
+          Catacomb Selection Setting
+        </summary>
+        <p style="text-align: center; margin-bottom: 0.5rem;">
+          Highlight catacomb start button if tomes are equipped and it's under a gold threshold
+        </p>
+        <div style="display: flex; justify-content: center;">
+          <label for="goldPerKillForTomesEquipped" style="margin-right: 0.5rem;">Gold per kill:</label>
+          <input type="number" id="goldPerKillForTomesEquipped" value="" placeholder="4000" style="width: 25%">
+        </div>
+      </details>
+
+      <!-- Save button -->
+      <div style="display: flex; justify-content: center; padding-top: 1rem;">
+        <button id="tomeSettingsSaveButton" type="button"
+          class="mat-focus-indicator mat-raised-button mat-button-base" 
+        >
+          Save
+        </button>
+    </form>
+  </div>
+</div>
