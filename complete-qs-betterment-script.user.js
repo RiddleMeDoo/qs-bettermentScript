@@ -133,6 +133,21 @@ class Script {
   }
 
   async initPlayerData() {
+    // Make sure gameData is loaded before initializing player data
+    let loadingTries = 600;
+    while ((!this.gameData || this.gameData.loadingService.loading) && loadingTries > 0) {
+      if (!this.gameData) {
+        this.getGameData();
+      }
+      console.log('QuesBS: Waiting for game to load...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      loadingTries--;
+    }
+
+    if (loadingTries <= 0) {
+      console.log('QuesBS: Could not load player data. Please refresh or manually restart the script.');
+      return;
+    }
     //Couldn't find an easier method to get quest completions than a POST request
     this.gameData.httpClient.post('/player/load/misc', {}).subscribe(
       val => {
@@ -716,7 +731,7 @@ class Script {
       'catacombs,catacomb': () => this.catacombObserver.disconnect(),
       'catacombs,tome_store': () => this.tomeObserver.disconnect(),
       'wb,chests': () => this.wbDropsObserver.disconnect(),
-      'portal': () => this.initPlayerData(),
+      'portal': () => { setTimeout(this.initPlayerData.bind(this), 2000)},
     }
     if(stop[pathname]) {
       stop[pathname]();
