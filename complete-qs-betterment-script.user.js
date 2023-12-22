@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.6.6
+// @version      1.6.6.1
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -33,6 +33,14 @@ class Script {
     this.kdExploLevel = 0;
     this.playerId;
     this.gameData;
+
+    //Event only
+    this.eventAudio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3');
+    this.eventAudio.volume = 0.3;
+    this.playerLevel;
+    this.dungeonAttempts;
+    this.actionTimer = 6;
+    this.questEndTime;
 
     //observer setup
     this.initObservers();
@@ -188,6 +196,32 @@ class Script {
 
     // Get kd exploration level for wb drops
     await this.updateKdInfo();
+
+    // Event exclusive
+    await this.initEventData();
+  }
+
+  async initEventData() {
+    const speeds = Object.values(this.gameData.playerPartnerService.partnerData).map(partner => partner.boosts.speed);
+    this.partnerSpeed = parseFloat((18 / (0.1 + speeds[0] / (speeds[0] + 2500))));
+    this.numPartners = speeds.length;
+
+    this.playerLevel = this.gameData.playerLevelsService?.battling?.level;
+
+    await this.updateEventData();
+  }
+
+  async updateEventData() {
+    this.dungeonAttempts = this.gameData.playerQueueService?.playerQueues?.automation_attempts_hour;
+    const playerQuest = this.gameData.playerQuestService?.currentQuest?.[0];
+    this.actionTimer = playerQuest && playerQuest.objectiveType === 'action_speed' ? 7 : 6;
+    if (playerQuest) {  // Calculate the current quest's end time
+      this.questEndTime = this.getQuestEndTime(
+        playerQuest.objectiveType, 
+        playerQuest.objectiveAmount, 
+        playerQuest.currentProgress
+      );
+    }
   }
 
   async getPartyActions() {
@@ -245,6 +279,9 @@ class Script {
     });
     this.wbDropsObserver = new MutationObserver(mutationsList => {
       this.handleWbChestOpening(mutationsList[0]);
+    });
+    this.eventQuestObserver = new MutationObserver(mutationsList => {
+      scriptObject.handleEventQuest(mutationsList);
     });
   }
 
@@ -395,6 +432,23 @@ class Script {
       }
       // Insert stat ratios on the pets page
       await this.insertPlayerStatRatios(target[0]);
+
+    } else if(path[0].toLowerCase() === 'events' && path[1].toLowerCase() === 'quest') {  // Event exclusive
+      if(path[path.length - 1].toLowerCase() === 'tournament-rankings') return;
+
+      let target = document.querySelector('app-event-quest-overview')?.firstChild?.children[1]?.children[1]?.firstChild;
+      while(target === undefined || target === null) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        target = document.querySelector('app-event-quest-overview')?.firstChild?.children[1]?.children[1]?.firstChild;
+      }
+
+      this.eventQuestObserver.observe(target, {
+        childList: true, subtree: false, attributes: false,
+      });
+
+      this.updateEventData();
+      //Insert an end time if applicable
+      this.insertEventEndTime(target.children[target.children.length - 1]);
     }
   }
 
@@ -841,6 +895,7 @@ class Script {
     */
     //First, determine if quest is active
     if(isActiveQuest && tableBody.children[0]) {
+      this.actionTimer = 6;
       //If it is, parse the text directly to get the end time
       const row = tableBody.children[0];
       const objectiveElemText = row?.children[1].innerText.split(' ');
@@ -854,6 +909,7 @@ class Script {
         //Special case: Party action quest (because it has 7 sec timer)
         if(row.children[2].innerText.split(' ')[1].toLowerCase() === 'party') {
           actionsNeeded = (objective - actionsDone) * 7 / 6;
+          this.actionTimer = 7;
         } else {
           actionsNeeded = objective - actionsDone;
         }
@@ -926,6 +982,7 @@ class Script {
 
     } else if(tableBody.children[0]) { //personal not active quests
       const availableQuests = this.gameData.playerQuestService.questArray;
+      this.actionTimer = 6;
 
       //Go through each quest and update row accordingly
       for(let i = 0; i < availableQuests.length; i++) {
@@ -1093,6 +1150,91 @@ class Script {
       const target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
       this.handleCatacombTomeStore({target: target[0]});
     }
+  }
+
+  handleEventQuest(mutations) {
+    /**
+     * Play a sound if mutation is a finished quest
+     */
+    const finished = mutations.filter(mutation => mutation.addedNodes.length > 0).length > 2 ? true : false;
+    if(finished) {
+      this.eventAudio.play();
+    } else {
+      const questElem = mutations.filter(mutation => mutation.addedNodes.length > 0 && mutation.addedNodes[0].innerText)[0].addedNodes[0];
+      this.insertEventEndTime(questElem);
+    }
+  }
+
+  insertEventEndTime(targetElem) {
+    /**
+     * Inserts an end time text to event quest if active
+    **/
+    const date = new Date();
+    const objective = targetElem.innerText.split(' ');
+    const actionsLeft = parseInt(objective[objective.length - 1]) - parseInt(objective[objective.length - 3]);
+    let minutes, finishTime, numActions;
+    const endTime = document.createElement('div');
+
+    if(targetElem.innerText?.startsWith('Automated')) {  // Dungeon
+      const dungeonsPerMin = this.dungeonAttempts / 60;
+      if(dungeonsPerMin <= 0) {
+        finishTime = 'Never';
+        numActions = 'No';
+      } else {
+        finishTime = new Date(date.getTime() + actionsLeft / dungeonsPerMin * 60 * 1000).toLocaleTimeString('en-GB');
+        numActions = Math.ceil(actionsLeft / dungeonsPerMin * 60 / 6);
+      }
+
+    } else if(targetElem.innerText?.startsWith('Player')) {
+      finishTime = new Date(date.getTime() + 250 * 6 * 1000).toLocaleTimeString('en-GB');
+      numActions = actionsLeft;
+
+    } else if(targetElem.innerText?.startsWith('Partner')) {
+      minutes = actionsLeft / (60/this.partnerSpeed) / this.numPartners;
+      finishTime = new Date(date.getTime() + minutes * 60 * 1000).toLocaleTimeString('en-GB');
+      numActions = Math.ceil(minutes * 60 / 6);
+
+    } else if(targetElem.innerText?.startsWith('Completed')) { // Personal Quest
+      finishTime = this.questEndTime.toLocaleTimeString('en-GB');
+      const actionTimer = this.actionTimer;
+      minutes = (this.questEndTime - date) / (1000 * 60);
+      numActions = Math.ceil(minutes * 60 / actionTimer);
+
+    } else if(targetElem.innerText?.startsWith('Catacomb')) { // Catacomb kills
+      if(this.playerLevel < 3500) {  // If player is not eligible for catacombs
+        finishTime = new Date(date.getTime() + actionsLeft * 6 * 1000).toLocaleTimeString('en-GB');
+        numActions = actionsLeft;
+      } else {
+        finishTime = getCatacombEndTime(actionsLeft, this.catacomb.actionTimerSeconds);
+        numActions = Math.ceil((actionsLeft * this.catacomb.actionTimerSeconds) / 6);
+      }
+      
+    } 
+    if (finishTime !== undefined && numActions !== undefined) {
+      endTime.innerText = `...(End time: ${finishTime}) (${numActions} actions)`;
+      targetElem.appendChild(endTime);
+    }
+  }
+
+  getQuestEndTime(type, objective, progress, isVillage=false) {
+    /**
+     * Custom quest end time to separate out code
+     */
+    let actionsNeeded = -1;
+    const date = new Date();
+
+    if (type === 'slow' || type === 'action_speed') {  // 7 second quest
+      actionsNeeded = (objective - progress) * 7 / 6;
+    } else if (type === 'friend') {
+      const currentMonster = this.gameData.playerActionService.selectedMonster;
+      actionsNeeded = Math.ceil((objective - progress) / (8 + 2 * currentMonster));
+    } else {
+      actionsNeeded = objective - progress;
+    }
+    const numPeople = isVillage ? this.quest.villageSize : 1;
+    //actionsNeeded * 6 sec per action * 1000 milliseconds / numPeople
+    const finishTime = new Date(date.getTime() + actionsNeeded * 6000 / numPeople);
+    return finishTime;
   }
 }
 
