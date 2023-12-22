@@ -792,6 +792,8 @@ class Script {
       'catacombs,catacomb': () => this.catacombObserver.disconnect(),
       'catacombs,tome_store': () => this.tomeObserver.disconnect(),
       'wb,chests': () => this.wbDropsObserver.disconnect(),
+      'events,quest': () => this.eventQuestObserver.disconnect(),
+      'events,quest,overview': () => this.eventQuestObserver.disconnect(),
       'portal': () => { setTimeout(this.initPlayerData.bind(this), 2000)},
     }
     if(stop[pathname]) {
