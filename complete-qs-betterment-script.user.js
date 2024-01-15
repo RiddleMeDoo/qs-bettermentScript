@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.6.6
+// @version      1.7.0
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @include      *queslar.com*
 // @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
-// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/tomeSettingsMenu.html
+// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/tome-buddy-weights/tomeSettingsMenu.html
 // @grant        GM_getResourceText
 // ==/UserScript==
 
