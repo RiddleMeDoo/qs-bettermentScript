@@ -1031,6 +1031,12 @@ class Script {
     const topStoreBar = tomeStoreOverview.firstChild.firstChild;
     topStoreBar.insertBefore(settings, topStoreBar.firstChild);
 
+    // Display correct settings
+    if (this.tomeSettings?.useWeightSettings) {
+      settingsContainer.querySelector('#tomeWeightSettingsBlock').style.display = 'block';
+      settingsContainer.querySelector('#thresholdSettingsBlock').style.display = 'none';
+    }
+
     // Fill in input values
     const settingsContainer = settings.childNodes[1];
     settingsContainer.querySelector('#rewardHighlightSetting').value = (this.tomeSettings.highlightReward / 100).toFixed(2);
@@ -1052,6 +1058,11 @@ class Script {
     settingsContainer.querySelector('#ignoreNegativeRareLegendaryRolls').checked = this.tomeSettings.ignoreNegativeRareLegendary ?? false;
     settingsContainer.querySelector('#goldPerKillForTomesEquipped').value = this.tomeSettings.goldKillTomesEquippedAmount ?? 0;
 
+    settingsContainer.querySelector('#actionSpeedWeight').value = this.tomeSettings.actionSpeedWeight ?? 0;
+    settingsContainer.querySelector('#mobSkipWeight').value = this.tomeSettings.mobSkipWeight ?? 0;
+    settingsContainer.querySelector('#multiMobWeight').value = this.tomeSettings.multiMobWeight ?? 0;
+    settingsContainer.querySelector('#lifestealWeight').value = this.tomeSettings.lifestealWeight ?? 0;
+
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
       const container = document.querySelector('#tomeSettingsContainer');
@@ -1061,7 +1072,22 @@ class Script {
         container.style.display = 'none';
       }
     };
-    document.querySelector('#tomeSettingsSaveButton').onclick = () => {
+    const toggleWeightSettings = (yes) => {
+      const thresholdSettingsBlock = settingsContainer.querySelector('#thresholdSettingsBlock');
+      const weightSettingsBlock = settingsContainer.querySelector('#tomeWeightSettingsBlock');
+      if(yes) {
+        weightSettingsBlock.style.display = 'block';
+        thresholdSettingsBlock.style.display = 'none';
+        this.tomeSettings.useWeightSettings = true;
+      } else {
+        weightSettingsBlock.style.display = 'none';
+        thresholdSettingsBlock.style.display = 'block';
+        this.tomeSettings.useWeightSettings = false;
+      }
+    }
+    settingsContainer.querySelector('#toggleThresholdSettings').onclick = () => toggleWeightSettings(false);
+    settingsContainer.querySelector('#toggleWeightSettings').onclick = () => toggleWeightSettings(true);
+    settingsContainer.querySelector('#tomeSettingsSaveButton').onclick = () => {
       // Get all of the values
       const container = document.querySelector('#tomeSettingsContainer');
       const tomeSettings = {
@@ -1083,6 +1109,10 @@ class Script {
         numGoodRolls: container.querySelector('#numGoodRolls').valueAsNumber,
         ignoreNegativeRareLegendary: container.querySelector('#ignoreNegativeRareLegendaryRolls').checked,
         goldKillTomesEquippedAmount: container.querySelector('#goldPerKillForTomesEquipped').valueAsNumber,
+        actionSpeedWeight: container.querySelector('#actionSpeedWeight').valueAsNumber,
+        mobSkipWeight: container.querySelector('#mobSkipWeight').valueAsNumber,
+        multiMobWeight: container.querySelector('#multiMobWeight').valueAsNumber,
+        lifestealWeight: container.querySelector('#lifestealWeight').valueAsNumber,
       };
       // Sanitize inputs
       for (const [key, value] of Object.entries(tomeSettings)) {
