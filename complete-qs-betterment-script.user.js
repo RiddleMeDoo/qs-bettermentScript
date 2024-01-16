@@ -1062,6 +1062,13 @@ class Script {
     settingsContainer.querySelector('#mobSkipWeight').value = this.tomeSettings.mobSkipWeight ?? 0;
     settingsContainer.querySelector('#multiMobWeight').value = this.tomeSettings.multiMobWeight ?? 0;
     settingsContainer.querySelector('#lifestealWeight').value = this.tomeSettings.lifestealWeight ?? 0;
+    settingsContainer.querySelector('#rewardWeight').value = this.tomeSettings.rewardWeight ?? 0;
+    settingsContainer.querySelector('#mobDebuffWeight').value = this.tomeSettings.mobDebuffWeight ?? 0;
+    settingsContainer.querySelector('#characterWeight').value = this.tomeSettings.characterWeight ?? 0;
+    settingsContainer.querySelector('#incomePerSpaceThreshold').value = this.tomeSettings.incomePerSpaceThreshold ?? 0;
+    settingsContainer.querySelector('#wbCharacterWeight').value = this.tomeSettings.wbCharacterWeight ?? 0;
+    settingsContainer.querySelector('#wbElementalConvWeight').value = this.tomeSettings.wbElementalConvWeight ?? 0;
+    settingsContainer.querySelector('#wbPowerPerSpaceThreshold').value = this.tomeSettings.wbPowerPerSpaceThreshold ?? 0;
 
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
@@ -1113,6 +1120,13 @@ class Script {
         mobSkipWeight: container.querySelector('#mobSkipWeight').valueAsNumber,
         multiMobWeight: container.querySelector('#multiMobWeight').valueAsNumber,
         lifestealWeight: container.querySelector('#lifestealWeight').valueAsNumber,
+        rewardWeight: container.querySelector('#rewardWeight').valueAsNumber,
+        mobDebuffWeight: container.querySelector('#mobDebuffWeight').valueAsNumber,
+        characterWeight: container.querySelector('#characterWeight').valueAsNumber,
+        incomePerSpaceThreshold: container.querySelector('#incomePerSpaceThreshold').valueAsNumber,
+        wbCharacterWeight: container.querySelector('#wbCharacterWeight').valueAsNumber,
+        wbElementalConvWeight: container.querySelector('#wbElementalConvWeight').valueAsNumber,
+        wbPowerPerSpaceThreshold: container.querySelector('#wbPowerPerSpaceThreshold').valueAsNumber,
       };
       // Sanitize inputs
       for (const [key, value] of Object.entries(tomeSettings)) {

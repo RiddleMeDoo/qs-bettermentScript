@@ -126,32 +126,65 @@
       </div>
 
       <!-- Tome weights settings -->
-      <div id="tomeWeightSettingsBlock" style="display:none; width:inherit;">
+      <div id="tomeWeightSettingsBlock" style="display:none; width:inherit; margin: 1rem 0;">
         <details>
           <summary style="text-align: center;">
-            Income Weights
+            Income Per Space
           </summary>
-          <div style="display: flex; justify-content: space-around; width: 80%">
+          <div style="display: flex; justify-content: center; width: 80%">
             <label for="actionSpeedWeight">Action Speed:</label>
-            <input type="number" id="actionSpeedWeight" value="" placeholder="0" style="width: 100%">
+            <input type="number" id="actionSpeedWeight" value="" placeholder="0" style="width: 30%; margin-left: 0.5rem">
           </div>
-          <div style="display: flex; justify-content: space-around; width: 80%">
+          <div style="display: flex; justify-content: center; width: 80%">
             <label for="mobSkipWeight">Mob Skip:</label>
-            <input type="number" id="mobSkipWeight" value="" placeholder="0" style="width: 100%">
+            <input type="number" id="mobSkipWeight" value="" placeholder="0" style="width: 30%; margin-left: 0.5rem">
           </div>
-          <div style="display: flex; justify-content: space-around; width: 80%">
-            <label for="multiMobWeight">Multi Mob</label>
-            <input type="number" id="multiMobWeight" value="" placeholder="0" style="width: 100%">
+          <div style="display: flex; justify-content: center; width: 80%">
+            <label for="multiMobWeight">Multi Mob:</label>
+            <input type="number" id="multiMobWeight" value="" placeholder="0" style="width: 30%; margin-left: 0.5rem">
           </div>
-          <div style="display: flex; justify-content: space-around; width: 80%">
-            <label for="lifestealWeight">Lifesteal</label>
-            <input type="number" id="lifestealWeight" value="" placeholder="0" style="width: 100%">
+          <div style="display: flex; justify-content: center; width: 80%">
+            <label for="lifestealWeight">Lifesteal:</label>
+            <input type="number" id="lifestealWeight" value="" placeholder="0" style="width: 30%; margin-left: 0.5rem">
+          </div>
+          <div style="display: flex; justify-content: center; width: 80%">
+            <label for="rewardWeight">Reward Multiplier:</label>
+            <input type="number" id="rewardWeight" value="" placeholder="0" style="width: 30%; margin-left: 0.5rem">
+          </div>
+          <div style="display: flex; justify-content: center; width: 80%">
+            <label for="mobDebuffWeight">Mob Debuff:</label>
+            <input type="number" id="mobDebuffWeight" value="" placeholder="0" style="width: 30%; margin-left: 0.5rem">
+          </div>
+          <div style="display: flex; justify-content: center; width: 80%">
+            <label for="characterWeight">Character Multiplier:</label>
+            <input type="number" id="characterWeight" value="" placeholder="0" style="width: 30%; margin-left: 0.5rem">
           </div>
           
           <div style="display: flex; justify-content: space-around;">
             <div style="display: inherit; justify-content: center; margin: 0.5rem;">
               <label for="incomePerSpaceThreshold">Minimum income per space:</label>
-              <input type="number" id="incomePerSpaceThreshold" value="" placeholder="100" style="width: 15%; margin-left: 0.5rem">
+              <input type="number" id="incomePerSpaceThreshold" value="" placeholder="100" style="width: 40%; margin-left: 0.5rem">
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary style="text-align: center;">
+            World Boss Power Per Space
+          </summary>
+          <div style="display: flex; justify-content: center; width: 80%">
+            <label for="wbCharacterWeight">Character Multiplier:</label>
+            <input type="number" id="wbCharacterWeight" value="" placeholder="0" style="width: 30%; margin-left: 0.5rem">
+          </div>
+          <div style="display: flex; justify-content: center; width: 80%">
+            <label for="wbElementalConvWeight">Elemental Conversion:</label>
+            <input type="number" id="wbElementalConvWeight" value="" placeholder="0" style="width: 30%; margin-left: 0.5rem">
+          </div>
+
+          <div style="display: flex; justify-content: space-around;">
+            <div style="display: inherit; justify-content: center; margin: 0.5rem;">
+              <label for="wbPowerPerSpaceThreshold">Minimum WB power per space:</label>
+              <input type="number" id="wbPowerPerSpaceThreshold" value="" placeholder="100" style="width: 40%; margin-left: 0.5rem">
             </div>
           </div>
         </details>
