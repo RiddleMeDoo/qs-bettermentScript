@@ -587,7 +587,7 @@ class Script {
 
       let shouldFadeTome = false;
       if (this.tomeSettings?.useWeightSettings) {
-        shouldFadeTome = checkTomeIncomePerSpace(tomeMods, tomeElement);
+        shouldFadeTome = !this.checkTomeIncomePerSpace(tomeMods, tomeElement);
       } else {
         shouldFadeTome = !this.checkTomeMeetsThresholds(tomeMods, tomeElement);
       }
@@ -604,7 +604,47 @@ class Script {
 
   checkTomeIncomePerSpace(tomeMods, tomeElement) {
     let incomePerSpace = 0;
-    incomePerSpace += tomeMods.multi_mob / 100 * this.tomeSettings.multiMobWeight;
+    incomePerSpace += tomeMods.multi_mob ?? 0 / 100 * this.tomeSettings.weights.multiMob ?? 0;
+    incomePerSpace += tomeMods.character_multiplier ?? 0 / 100 * this.tomeSettings.weights.character ?? 0;
+    incomePerSpace += tomeMods.speed ?? 0 / 100 * this.tomeSettings.weights.actionSpeed ?? 0;
+    incomePerSpace += tomeMods.skip ?? 0 / 100 * this.tomeSettings.weights.mobSkip ?? 0;
+    incomePerSpace += tomeMods.lifesteal ?? 0 / 100 * this.tomeSettings.weights.lifesteal ?? 0;
+    incomePerSpace += tomeMods.reward_multiplier ?? 0 / 100 * this.tomeSettings.weights.reward ?? 0;
+    incomePerSpace += tomeMods.mob_multiplier ?? 0 / 100 * this.tomeSettings.weights.mobDebuff ?? 0;
+    incomePerSpace /= tomeMods.space_requirement;
+
+    let wbPowerPerSpace = tomeMods.character_multiplier ?? 0 / 100.0 * this.tomeSettings.weights.wbCharacter ?? 0;
+    wbPowerPerSpace += tomeMods.elemental_conversion ?? 0 / 100.0 * this.tomeSettings.weights.wbElementalConv ?? 0;
+    wbPowerPerSpace /= tomeMods.space_requirement;
+
+    let meetsRequirements = false;
+
+    // If income per space threshold is met, display and colour the number with gold
+    const incomePerSpaceEle = tomeElement.querySelector('#incomePerSpace') ? 
+      tomeElement.querySelector('#incomePerSpace') : document.createElement('div');
+    incomePerSpaceEle.id = 'incomePerSpace';
+    incomePerSpaceEle.innerText = Math.round(incomePerSpace).toLocaleString();
+    if (incomePerSpace >= this.tomeSettings.weights.incomePerSpaceThreshold) {
+      meetsRequirements = true;
+      incomePerSpaceEle.style.color = 'gold';
+    }
+
+    const wbPowerPerSpaceEle = tomeElement.querySelector('#wbPowerPerSpace') ? 
+      tomeElement.querySelector('#wbPowerPerSpace') : document.createElement('div');
+    wbPowerPerSpaceEle.id = 'wbPowerPerSpace';
+    wbPowerPerSpaceEle.innerText = Math.round(wbPowerPerSpace).toLocaleString();
+    if (wbPowerPerSpace >= this.tomeSettings.weights.wbPowerPerSpaceThreshold) {
+      meetsRequirements = true;
+      wbPowerPerSpaceEle.style.color = 'forestgreen';
+    }
+
+    // Add text to the tomes
+    const siblingElement = tomeElement.nextSibling;
+    incomePerSpaceEle.className = siblingElement.firstChild.className;
+    wbPowerPerSpaceEle.className = siblingElement.firstChild.className;
+    tomeElement.appendChild(incomePerSpaceEle);
+    tomeElement.appendChild(wbPowerPerSpaceEle);
+    return meetsRequirements;
   }
 
   checkTomeMeetsThresholds(tomeMods, tomeElement) {
@@ -1052,13 +1092,13 @@ class Script {
     topStoreBar.insertBefore(settings, topStoreBar.firstChild);
 
     // Display correct settings
+    const settingsContainer = settings.childNodes[1];
     if (this.tomeSettings?.useWeightSettings) {
       settingsContainer.querySelector('#tomeWeightSettingsBlock').style.display = 'block';
       settingsContainer.querySelector('#thresholdSettingsBlock').style.display = 'none';
     }
 
     // Fill in input values
-    const settingsContainer = settings.childNodes[1];
     settingsContainer.querySelector('#rewardHighlightSetting').value = (this.tomeSettings.thresholds.reward / 100).toFixed(2);
     settingsContainer.querySelector('#mobHighlightSetting').value = (this.tomeSettings.thresholds.mobDebuff / 100).toFixed(2);
     settingsContainer.querySelector('#characterHighlightSetting').value = (this.tomeSettings.thresholds.character / 100).toFixed(2);
@@ -1155,8 +1195,14 @@ class Script {
         },
       };
       // Sanitize inputs
-      for (const [key, value] of Object.entries({...this.tomeSettings.thresholds, ...this.tomeSettings.spaceThresholds, ...this.tomeSettings.weights})) {
-        this.tomeSettings[key] = isNaN(value) ? this.tomeSettings[key] : value;
+      for (const type in tomeSettings) {
+        if (typeof tomeSettings[type] === 'object') {
+          for (const [key, value] of Object.entries(tomeSettings[type])) {
+            this.tomeSettings[type][key] = isNaN(value) ? this.tomeSettings[type][key] : value;
+          }
+        } else {
+          this.tomeSettings[type] = isNaN(tomeSettings[type]) ? this.tomeSettings[type] : tomeSettings[type];
+        }
       }
       localStorage.setItem(`${this.playerId}:QuesBS_tomeSettings`, JSON.stringify(this.tomeSettings));
       // Refresh highlighting
