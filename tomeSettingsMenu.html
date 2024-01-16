@@ -4,27 +4,27 @@
   <div class="item-card light-background-border p-2 m-1 d-flex" style="width: 100%;">
     <!-- Buttons to switch between setting types -->
     <div style="display: flex; justify-content: space-around; width: 100%; height: fit-content">
-      <button type="button" class="mat-focus-indicator mat-raised-button mat-button-base" 
-      onclick="(functon() {
-        const w = document.getElementById('tomeWeightSettingsBlock');
-        const t = document.getElementById('thresholdSettingsBlock');
-        const c = document.getElementById('useWeights');
-        w.style.display = 'none';
-        t.style.display = 'block';
-        c.checked = false;
-      })();">
-        Setting 1
+      <script>
+        function displayWeightSettings(yes) {
+          const tomeWeightSettings = document.getElementById('tomeWeightSettingsBlock');
+          const thresholdSettings = document.getElementById('thresholdSettingsBlock');
+          const useWeights = document.getElementById('useWeights');
+          if(yes) {
+            tomeWeightSettings.style.display = 'block';
+            thresholdSettings.style.display = 'none';
+            useWeights = true;
+          } else {
+            tomeWeightSettings.style.display = 'none';
+            thresholdSettings.style.display = 'block';
+            useWeights = false;
+          }
+        }
+      </script>
+      <button type="button" class="mat-focus-indicator mat-raised-button mat-button-base" onclick="displayWeightSettings(false)">
+        Use thresholds
       </button>
-      <button type="button" class="mat-focus-indicator mat-raised-button mat-button-base" 
-      onclick="(function(){
-        const w = document.getElementById('tomeWeightSettingsBlock');
-        const t = document.getElementById('thresholdSettingsBlock');
-        const c = document.getElementById('useWeights');
-        w.style.display = 'block';
-        t.style.display = 'none';
-        c.checked = true;
-      })();">
-        Setting 2
+      <button type="button" class="mat-focus-indicator mat-raised-button mat-button-base" onclick="displayWeightSettings(true)">
+        Use weights
       </button>
       <input id="useWeights" type="checkbox" style="display:none;"/>
     </div>
