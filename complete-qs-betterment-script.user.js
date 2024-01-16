@@ -598,23 +598,25 @@ class Script {
         [...tomeElement.children].forEach((child) => {
            child.style.opacity = "0.4";
         });
+      } else {
+        tomeElement.parentElement.style.boxShadow = '0 0 30px 15px #48abe0';
       }
     }
   }
 
   checkTomeIncomePerSpace(tomeMods, tomeElement) {
     let incomePerSpace = 0;
-    incomePerSpace += tomeMods.multi_mob ?? 0 / 100 * this.tomeSettings.weights.multiMob ?? 0;
-    incomePerSpace += tomeMods.character_multiplier ?? 0 / 100 * this.tomeSettings.weights.character ?? 0;
-    incomePerSpace += tomeMods.speed ?? 0 / 100 * this.tomeSettings.weights.actionSpeed ?? 0;
-    incomePerSpace += tomeMods.skip ?? 0 / 100 * this.tomeSettings.weights.mobSkip ?? 0;
-    incomePerSpace += tomeMods.lifesteal ?? 0 / 100 * this.tomeSettings.weights.lifesteal ?? 0;
-    incomePerSpace += tomeMods.reward_multiplier ?? 0 / 100 * this.tomeSettings.weights.reward ?? 0;
-    incomePerSpace += tomeMods.mob_multiplier ?? 0 / 100 * this.tomeSettings.weights.mobDebuff ?? 0;
+    incomePerSpace += (tomeMods.multi_mob ?? 0) / 100 * (this.tomeSettings.weights.multiMob ?? 0);
+    incomePerSpace += (tomeMods.character_multiplier ?? 0) / 100 * (this.tomeSettings.weights.character ?? 0);
+    incomePerSpace += (tomeMods.speed ?? 0) / 100 * (this.tomeSettings.weights.actionSpeed ?? 0);
+    incomePerSpace += (tomeMods.skip ?? 0) / 100 * (this.tomeSettings.weights.mobSkip ?? 0);
+    incomePerSpace += (tomeMods.lifesteal ?? 0) / 100 * (this.tomeSettings.weights.lifesteal ?? 0);
+    incomePerSpace += (tomeMods.reward_multiplier ?? 0) / 100 * (this.tomeSettings.weights.reward ?? 0);
+    incomePerSpace += (tomeMods.mob_multiplier ?? 0) / 100 * (this.tomeSettings.weights.mobDebuff ?? 0);
     incomePerSpace /= tomeMods.space_requirement;
 
-    let wbPowerPerSpace = tomeMods.character_multiplier ?? 0 / 100.0 * this.tomeSettings.weights.wbCharacter ?? 0;
-    wbPowerPerSpace += tomeMods.elemental_conversion ?? 0 / 100.0 * this.tomeSettings.weights.wbElementalConv ?? 0;
+    let wbPowerPerSpace = (tomeMods.character_multiplier ?? 0) / 100.0 * (this.tomeSettings.weights.wbCharacter ?? 0);
+    wbPowerPerSpace += (tomeMods.elemental_conversion ?? 0) / 100.0 * (this.tomeSettings.weights.wbElementalConv ?? 0);
     wbPowerPerSpace /= tomeMods.space_requirement;
 
     let meetsRequirements = false;
