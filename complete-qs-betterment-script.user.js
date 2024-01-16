@@ -587,9 +587,9 @@ class Script {
 
       let shouldFadeTome = false;
       if (this.tomeSettings?.useWeightSettings) {
-        shouldFadeTome = !this.checkTomeIncomePerSpace(tomeMods, tomeElement);
+        shouldFadeTome = !this.checkAndDisplayTomeIncomePerSpace(tomeMods, tomeElement);
       } else {
-        shouldFadeTome = !this.checkTomeMeetsThresholds(tomeMods, tomeElement);
+        shouldFadeTome = !this.checkAndDisplayTomeMeetsThresholds(tomeMods, tomeElement);
       }
 
       // Fade out tomes that didn't meet requirements
@@ -601,10 +601,25 @@ class Script {
       } else {
         tomeElement.parentElement.style.boxShadow = '0 0 30px 15px #48abe0';
       }
+
+      // Hide modifiers on tomes according to the settings
+      const modifierOrder = [
+        'tomeName', 'spaceReq', 'addedMobs', 'reward', 'mobDebuff', 'character', 'waterResistance', 
+        'thunderResistance', 'fireResistance', 'meleeResistance', 'rangedResistance', 'elementalConversion', 
+        'fortifyReduction'
+      ];
+      for (let i = 2; i < tomeElement.children.length; i++) {
+        const modifierEle = tomeElement.children[i];
+        if (this.tomeSettings.hideMods[modifierOrder[i]]) {
+          modifierEle.style.setProperty('display', 'none', 'important');
+        } else {
+          modifierEle.style.display = '';
+        }
+      }
     }
   }
 
-  checkTomeIncomePerSpace(tomeMods, tomeElement) {
+  checkAndDisplayTomeIncomePerSpace(tomeMods, tomeElement) {
     let incomePerSpace = 0;
     incomePerSpace += (tomeMods.multi_mob ?? 0) / 100 * (this.tomeSettings.weights.multiMob ?? 0);
     incomePerSpace += (tomeMods.character_multiplier ?? 0) / 100 * (this.tomeSettings.weights.character ?? 0);
@@ -621,35 +636,34 @@ class Script {
 
     let meetsRequirements = false;
 
-    // If income per space threshold is met, display and colour the number with gold
-    const incomePerSpaceEle = tomeElement.querySelector('#incomePerSpace') ? 
-      tomeElement.querySelector('#incomePerSpace') : document.createElement('div');
-    incomePerSpaceEle.id = 'incomePerSpace';
-    incomePerSpaceEle.innerText = Math.round(incomePerSpace).toLocaleString();
+    // Display the numbers in the tomeElement
+    const displayEle = tomeElement.querySelector(`#perspacedisplay-${tomeMods.id}`) ?? document.createElement('div');
+    const incomePerSpaceEle = displayEle.querySelector(`#incomeperspace-${tomeMods.id}`) ?? document.createElement('div');
+    incomePerSpaceEle.id = `incomeperspace-${tomeMods.id}`;
+    incomePerSpaceEle.innerText = `Income: ${Math.round(incomePerSpace).toLocaleString()}`;
     if (incomePerSpace >= this.tomeSettings.weights.incomePerSpaceThreshold) {
       meetsRequirements = true;
       incomePerSpaceEle.style.color = 'gold';
     }
 
-    const wbPowerPerSpaceEle = tomeElement.querySelector('#wbPowerPerSpace') ? 
-      tomeElement.querySelector('#wbPowerPerSpace') : document.createElement('div');
-    wbPowerPerSpaceEle.id = 'wbPowerPerSpace';
-    wbPowerPerSpaceEle.innerText = Math.round(wbPowerPerSpace).toLocaleString();
+    const wbPowerPerSpaceEle = displayEle.querySelector(`#wbpowerperspace-${tomeMods.id}`) ?? document.createElement('div');
+    wbPowerPerSpaceEle.id = `wbpowerperspace-${tomeMods.id}`;
+    wbPowerPerSpaceEle.innerText = `WB: ${Math.round(wbPowerPerSpace).toLocaleString()}`;
     if (wbPowerPerSpace >= this.tomeSettings.weights.wbPowerPerSpaceThreshold) {
       meetsRequirements = true;
       wbPowerPerSpaceEle.style.color = 'forestgreen';
     }
 
-    // Add text to the tomes
-    const siblingElement = tomeElement.nextSibling;
-    incomePerSpaceEle.className = siblingElement.firstChild.className;
-    wbPowerPerSpaceEle.className = siblingElement.firstChild.className;
-    tomeElement.appendChild(incomePerSpaceEle);
-    tomeElement.appendChild(wbPowerPerSpaceEle);
+    // Add the text elements to the tomes
+    displayEle.appendChild(incomePerSpaceEle);
+    displayEle.appendChild(wbPowerPerSpaceEle);
+    displayEle.id = `perspacedisplay-${tomeMods.id}`;
+    displayEle.className = 'd-flex justify-content-between ng-star-inserted';
+    tomeElement.appendChild(displayEle, tomeElement.nextSibling.firstChild);
     return meetsRequirements;
   }
 
-  checkTomeMeetsThresholds(tomeMods, tomeElement) {
+  checkAndDisplayTomeMeetsThresholds(tomeMods, tomeElement) {
     /**
     * Returns true if given tomes meet thresholds according to the stored tome settings 
     * Also highlight the tomeElement if threshold is met
