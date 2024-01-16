@@ -69,27 +69,27 @@ class Script {
     this.tomeSettings.useWeightSettings = this.tomeSettings.useWeightSettings ?? false;
     this.tomeSettings.weights = this.tomeSettings.weights ?? {};
     this.tomeSettings.thresholds = this.tomeSettings.thresholds ?? {
-        reward: this.tomeSettings.highlightReward ?? 99900,
-        mobDebuff: this.tomeSettings.highlightMob ?? 99900,
-        character: this.tomeSettings.highlightCharacter ?? 99900,
-        characterWb: this.tomeSettings.highlightCharacterWb ?? 99900,
-        elementalConv: this.tomeSettings.highlightElementalConv ?? 99900,
-        multiMob: this.tomeSettings.highlightMultiMob ?? 1,
-        lifesteal: this.tomeSettings.highlightLifesteal ?? 1,
-        actionSpeed: this.tomeSettings.highlightActionSpeed ?? 1,
-        mobSkip: this.tomeSettings.highlightMobSkip ?? 1,
-        numGoodRolls: this.tomeSettings.numGoodRolls ?? 1,
-        ignoreNegativeRareLegendary: this.tomeSettings.ignoreNegativeRareLegendary ?? false,
-      }
-      this.tomeSettings.spaceThresholds = this.tomeSettings.spaceThresholds ?? {
-        reward: this.tomeSettings.spaceLimitReward ?? 6,
-        mobDebuff: this.tomeSettings.spaceLimitMob ?? 6,
-        character: this.tomeSettings.spaceLimitCharacter ?? 6,
-        wb: this.tomeSettings.spaceLimitWb ?? 6,
-        rare: this.tomeSettings.spaceLimitRare ?? 6,
-        legendary: this.tomeSettings.spaceLimitLegendary ?? 6,
-        
+      reward: this.tomeSettings.highlightReward ?? 99900,
+      mobDebuff: this.tomeSettings.highlightMob ?? 99900,
+      character: this.tomeSettings.highlightCharacter ?? 99900,
+      characterWb: this.tomeSettings.highlightCharacterWb ?? 99900,
+      elementalConv: this.tomeSettings.highlightElementalConv ?? 99900,
+      multiMob: this.tomeSettings.highlightMultiMob ?? 1,
+      lifesteal: this.tomeSettings.highlightLifesteal ?? 1,
+      actionSpeed: this.tomeSettings.highlightActionSpeed ?? 1,
+      mobSkip: this.tomeSettings.highlightMobSkip ?? 1,
+      numGoodRolls: this.tomeSettings.numGoodRolls ?? 1,
+      ignoreNegativeRareLegendary: this.tomeSettings.ignoreNegativeRareLegendary ?? false,
     }
+    this.tomeSettings.spaceThresholds = this.tomeSettings.spaceThresholds ?? {
+      reward: this.tomeSettings.spaceLimitReward ?? 6,
+      mobDebuff: this.tomeSettings.spaceLimitMob ?? 6,
+      character: this.tomeSettings.spaceLimitCharacter ?? 6,
+      wb: this.tomeSettings.spaceLimitWb ?? 6,
+      rare: this.tomeSettings.spaceLimitRare ?? 6,
+      legendary: this.tomeSettings.spaceLimitLegendary ?? 6,
+    }
+    this.tomeSettings.hideMods = this.tomeSettings.hideMods ?? {};
   }
 
   async getGameData() { //ULTIMATE POWER
@@ -1132,6 +1132,18 @@ class Script {
     settingsContainer.querySelector('#wbElementalConvWeight').value = this.tomeSettings.weights.wbElementalConv ?? 0;
     settingsContainer.querySelector('#wbPowerPerSpaceThreshold').value = this.tomeSettings.weights.wbPowerPerSpaceThreshold ?? 0;
 
+    settingsContainer.querySelector('#hideAddedMobs').checked = this.tomeSettings.hideMods.addedMobs ?? false;
+    settingsContainer.querySelector('#hideReward').checked = this.tomeSettings.hideMods.reward ?? false;
+    settingsContainer.querySelector('#hideMobDebuff').checked = this.tomeSettings.hideMods.mobDebuff ?? false;
+    settingsContainer.querySelector('#hideCharacter').checked = this.tomeSettings.hideMods.character ?? false;
+    settingsContainer.querySelector('#hideWaterResistance').checked = this.tomeSettings.hideMods.waterResistance ?? false;
+    settingsContainer.querySelector('#hideThunderResistance').checked = this.tomeSettings.hideMods.thunderResistance ?? false;
+    settingsContainer.querySelector('#hideFireResistance').checked = this.tomeSettings.hideMods.fireResistance ?? false;
+    settingsContainer.querySelector('#hideMeleeResistance').checked = this.tomeSettings.hideMods.meleeResistance ?? false;
+    settingsContainer.querySelector('#hideRangedResistance').checked = this.tomeSettings.hideMods.rangedResistance ?? false;
+    settingsContainer.querySelector('#hideElementalConversion').checked = this.tomeSettings.hideMods.elementalConversion ?? false;
+    settingsContainer.querySelector('#hideFortifyReduction').checked = this.tomeSettings.hideMods.fortifyReduction ?? false;
+
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
       const container = document.querySelector('#tomeSettingsContainer');
@@ -1194,6 +1206,19 @@ class Script {
           wbCharacter: container.querySelector('#wbCharacterWeight').valueAsNumber,
           wbElementalConv: container.querySelector('#wbElementalConvWeight').valueAsNumber,
           wbPowerPerSpaceThreshold: container.querySelector('#wbPowerPerSpaceThreshold').valueAsNumber,
+        },
+        hideMods: {
+          addedMobs: container.querySelector('#hideAddedMobs').checked,
+          reward: settingsContainer.querySelector('#hideReward').checked,
+          mobDebuff: settingsContainer.querySelector('#hideMobDebuff').checked,
+          character: settingsContainer.querySelector('#hideCharacter').checked,
+          waterResistance: settingsContainer.querySelector('#hideWaterResistance').checked,
+          thunderResistance: settingsContainer.querySelector('#hideThunderResistance').checked,
+          fireResistance: settingsContainer.querySelector('#hideFireResistance').checked,
+          meleeResistance: settingsContainer.querySelector('#hideMeleeResistance').checked,
+          rangedResistance: settingsContainer.querySelector('#hideRangedResistance').checked,
+          elementalConversion: settingsContainer.querySelector('#hideElementalConversion').checked,
+          fortifyReduction: settingsContainer.querySelector('#hideFortifyReduction').checked,
         },
       };
       // Sanitize inputs
