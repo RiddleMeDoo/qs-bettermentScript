@@ -1,25 +1,9 @@
 <div id="tomeSettingsContainer" class="tooltip-container" 
-  style="position: absolute; width: 250%; max-height:25rem; z-index:1; overflow:scroll; display: none;"
+  style="position: absolute; width: 25rem; max-height:25rem; z-index:1; overflow:scroll; display: none;"
 >
-  <div class="item-card light-background-border p-2 m-1 d-flex" style="width: 100%;">
+  <div class="item-card light-background-border p-2 m-1" style="width: 100%; display: grid; grid-template-columns: 1fr;">
     <!-- Buttons to switch between setting types -->
     <div style="display: flex; justify-content: space-around; width: 100%; height: fit-content">
-      <script>
-        function displayWeightSettings(yes) {
-          const tomeWeightSettings = document.getElementById('tomeWeightSettingsBlock');
-          const thresholdSettings = document.getElementById('thresholdSettingsBlock');
-          const useWeights = document.getElementById('useWeights');
-          if(yes) {
-            tomeWeightSettings.style.display = 'block';
-            thresholdSettings.style.display = 'none';
-            useWeights = true;
-          } else {
-            tomeWeightSettings.style.display = 'none';
-            thresholdSettings.style.display = 'block';
-            useWeights = false;
-          }
-        }
-      </script>
       <button type="button" class="mat-focus-indicator mat-raised-button mat-button-base" onclick="displayWeightSettings(false)">
         Use thresholds
       </button>
@@ -29,9 +13,9 @@
       <input id="useWeights" type="checkbox" style="display:none;"/>
     </div>
     
-    <!-- Threshold settings -->
-    <div style="width: inherit" id="thresholdSettingsBlock">
-      <form style="width: inherit">
+    <form style="width: inherit">
+      <!-- Threshold settings -->
+      <div style="width: inherit" id="thresholdSettingsBlock">
         <!-- Regular tome settings -->
         <details>
           <summary style="text-align: center;">
@@ -140,33 +124,10 @@
           </div>
           <p style="text-align: center;">These will only highlight double rolls</p>
         </details>
-      
-        <details>
-          <summary style="text-align: center;">
-            Catacomb Selection Setting
-          </summary>
-          <p style="text-align: center; margin-bottom: 0.5rem;">
-            Highlight catacomb start button if tomes are equipped and it's under a gold threshold
-          </p>
-          <div style="display: flex; justify-content: center;">
-            <label for="goldPerKillForTomesEquipped" style="margin-right: 0.5rem;">Gold per kill:</label>
-            <input type="number" id="goldPerKillForTomesEquipped" value="" placeholder="4000" style="width: 25%">
-          </div>
-        </details>
-      
-        <!-- Save button -->
-        <div style="display: flex; justify-content: center; padding-top: 1rem;">
-          <button id="tomeSettingsSaveButton" type="button"
-            class="mat-focus-indicator mat-raised-button mat-button-base" 
-          >
-            Save
-          </button>
-      </form>
-    </div>
-    
-    <!-- Tome weights settings -->
-    <div id="tomeWeightSettingsBlock" style="display:none; width:inherit;">
-      <form style="width: inherit" >
+      </div>
+
+      <!-- Tome weights settings -->
+      <div id="tomeWeightSettingsBlock" style="display:none; width:inherit;">
         <details>
           <summary style="text-align: center;">
             Income Weights
@@ -195,7 +156,47 @@
             </div>
           </div>
         </details>
-      </form>
-    </div>
+      </div>
+      
+      <details>
+        <summary style="text-align: center;">
+          Catacomb Selection Setting
+        </summary>
+        <p style="text-align: center; margin-bottom: 0.5rem;">
+          Highlight catacomb start button if tomes are equipped and it's under a gold threshold
+        </p>
+        <div style="display: flex; justify-content: center;">
+          <label for="goldPerKillForTomesEquipped" style="margin-right: 0.5rem;">Gold per kill:</label>
+          <input type="number" id="goldPerKillForTomesEquipped" value="" placeholder="4000" style="width: 25%">
+        </div>
+      </details>
+      
+      <!-- Save button -->
+      <div style="display: flex; justify-content: center; padding-top: 1rem;">
+        <button id="tomeSettingsSaveButton" type="button"
+          class="mat-focus-indicator mat-raised-button mat-button-base" 
+        >
+          Save
+        </button>
+      </div>
+    </form>
   </div>
+
+   <!-- Code for buttons -->
+  <script> 
+    function displayWeightSettings(yes) {  // Switch between setting types
+      const tomeWeightSettings = document.getElementById('tomeWeightSettingsBlock');
+      const thresholdSettings = document.getElementById('thresholdSettingsBlock');
+      const useWeights = document.getElementById('useWeights');
+      if(yes) {
+        tomeWeightSettings.style.display = 'block';
+        thresholdSettings.style.display = 'none';
+        useWeights = true;
+      } else {
+        tomeWeightSettings.style.display = 'none';
+        thresholdSettings.style.display = 'block';
+        useWeights = false;
+      }
+    }
+  </script>
 </div>
