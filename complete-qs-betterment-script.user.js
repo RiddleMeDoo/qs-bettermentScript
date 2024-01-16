@@ -62,33 +62,34 @@ class Script {
       localStorage.setItem(`${this.playerId}:QuesBS_tomeSettings`, JSON.stringify(this.tomeSettings));
     } else if(!this.tomeSettings) {
       this.tomeSettings = {
-        highlightReward: 99900,
-        highlightMob: 99900,
-        highlightCharacter: 99900,
-        highlightCharacterWb: 99900,
-        highlightElementalConv: 99900,
-        highlightMultiMob: 1,
-        highlightLifesteal: 1,
-        highlightActionSpeed: 1,
-        highlightMobSkip: 1,
-        spaceLimitReward: 6,
-        spaceLimitMob: 6,
-        spaceLimitCharacter: 6,
-        spaceLimitWb: 6,
-        spaceLimitRare: 6,
-        spaceLimitLegendary: 6,
-        numGoodRolls: 1,
-        ignoreNegativeRareLegendary: false,
         goldKillTomesEquippedAmount: 0,
       };
     }
-
-    // ! More migration from v1.6.4, delete after 2024-05-01
-    this.tomeSettings.highlightCharacterWb = this.tomeSettings.highlightCharacterWb ?? 99900;
-    this.tomeSettings.highlightMultiMob = this.tomeSettings.highlightMultiMob ?? 1;
-    this.tomeSettings.highlightLifesteal = this.tomeSettings.highlightLifesteal ?? 1;
-    this.tomeSettings.highlightActionSpeed = this.tomeSettings.highlightActionSpeed ?? 1;
-    this.tomeSettings.highlightMobSkip = this.tomeSettings.highlightMobSkip ?? 1;
+    // ! More migration from v1.7.0, delete after 2025-01-01
+    this.tomeSettings.useWeightSettings = this.tomeSettings.useWeightSettings ?? false;
+    this.tomeSettings.weights = this.tomeSettings.weights ?? {};
+    this.tomeSettings.thresholds = this.tomeSettings.thresholds ?? {
+        reward: this.tomeSettings.highlightReward ?? 99900,
+        mobDebuff: this.tomeSettings.highlightMob ?? 99900,
+        character: this.tomeSettings.highlightCharacter ?? 99900,
+        characterWb: this.tomeSettings.highlightCharacterWb ?? 99900,
+        elementalConv: this.tomeSettings.highlightElementalConv ?? 99900,
+        multiMob: this.tomeSettings.highlightMultiMob ?? 1,
+        lifesteal: this.tomeSettings.highlightLifesteal ?? 1,
+        actionSpeed: this.tomeSettings.highlightActionSpeed ?? 1,
+        mobSkip: this.tomeSettings.highlightMobSkip ?? 1,
+        numGoodRolls: this.tomeSettings.numGoodRolls ?? 1,
+        ignoreNegativeRareLegendary: this.tomeSettings.ignoreNegativeRareLegendary ?? false,
+      }
+      this.tomeSettings.spaceThresholds = this.tomeSettings.spaceThresholds ?? {
+        reward: this.tomeSettings.spaceLimitReward ?? 6,
+        mobDebuff: this.tomeSettings.spaceLimitMob ?? 6,
+        character: this.tomeSettings.spaceLimitCharacter ?? 6,
+        wb: this.tomeSettings.spaceLimitWb ?? 6,
+        rare: this.tomeSettings.spaceLimitRare ?? 6,
+        legendary: this.tomeSettings.spaceLimitLegendary ?? 6,
+        
+    }
   }
 
   async getGameData() { //ULTIMATE POWER
@@ -584,95 +585,12 @@ class Script {
       const tomeMods = tomes[i];
       const tomeElement = tomeElements[i].firstChild;
 
-      // Requirements are checked here since they're very long
-      const hasNegativeRareLegendaryRolls = tomeMods.lifesteal < 0 || tomeMods.multi_mob < 0 
-                                            || tomeMods.speed < 0 || tomeMods.skip < 0;
-      const meetsRareRequirements = (
-        (tomeMods.lifesteal > 0 || tomeMods.multi_mob > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceLimitRare
-      );
-      const meetsLegendaryRequirements = (
-        (tomeMods.speed > 0 || tomeMods.skip > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceLimitLegendary
-      );
-      
-      const meetsWbTomeRequirements = 
-        tomeMods.space_requirement <= this.tomeSettings.spaceLimitWb 
-        && tomeMods.elemental_conversion >= 0
-        && tomeMods.character_multiplier >= 0
-        && (tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv
-        || tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb);
-
-      const meetsRewardMultiRequirements = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward 
-        && tomeMods.space_requirement <= this.tomeSettings.spaceLimitReward;
-      const meetsMobDebuffRequirements = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob 
-        && tomeMods.space_requirement <= this.tomeSettings.spaceLimitMob
-        && tomeMods.reward_multiplier >= 0;
-      const meetsCharacterMultiRequirements = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter 
-        && tomeMods.space_requirement <= this.tomeSettings.spaceLimitCharacter
-        && tomeMods.reward_multiplier >= 0;
-
-      let sumGoodRolls = 0; // Count how many requirements were met
-      let shouldFadeTome = true;  // Flag that determines whether tome should be faded
-
-      // Highlight world boss tomes
-      if (meetsWbTomeRequirements) {
-        let sumRolls = 0;
-
-        if (tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv) {
-          const isDoubleElemental = tomeMods.elemental_conversion >= this.tomeSettings.highlightElementalConv * 2;
-          sumRolls += isDoubleElemental ? 2 : 1;
-          tomeElement.children[11].style.border = `${isDoubleElemental ? 'thick' : '1px'} solid`;
-          tomeElement.children[11].style.borderColor = 'forestgreen';
-        } 
-
-        if (tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb) {
-          const isDoubleCharacter = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacterWb * 2;
-          sumRolls += isDoubleCharacter ? 2 : 1;
-          tomeElement.children[5].style.border = `${isDoubleCharacter ? 'thick' : '1px'} solid`;
-          tomeElement.children[5].style.borderColor = 'forestgreen';
-        }
-
-        if (sumRolls > 1) {
-          shouldFadeTome = false;
-        }
+      let shouldFadeTome = false;
+      if (this.tomeSettings?.useWeightSettings) {
+        shouldFadeTome = checkTomeIncomePerSpace(tomeMods, tomeElement);
+      } else {
+        shouldFadeTome = !this.checkTomeMeetsThresholds(tomeMods, tomeElement);
       }
-
-      // Highlight other modifiers if they meet the requirements
-      if (!hasNegativeRareLegendaryRolls || this.tomeSettings.ignoreNegativeRareLegendary) { 
-        if (meetsRareRequirements) {
-          sumGoodRolls += tomeMods.lifesteal > 0 ? Math.floor(tomeMods.lifesteal / this.tomeSettings.highlightLifesteal) : 0;
-          sumGoodRolls += tomeMods.multi_mob > 0 ? Math.floor(tomeMods.multi_mob / this.tomeSettings.highlightMultiMob) : 0;
-        }
-        if (meetsLegendaryRequirements) {
-          sumGoodRolls += tomeMods.speed > 0 ? Math.floor(tomeMods.speed / this.tomeSettings.highlightActionSpeed) : 0;
-          sumGoodRolls += tomeMods.skip > 0 ? Math.floor(tomeMods.skip / this.tomeSettings.highlightMobSkip) : 0;
-        }
-
-        if (meetsRewardMultiRequirements) {
-          const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.highlightReward * 2;
-          tomeElement.children[3].style.border = `${isDouble ? 'thick' : '2px'} solid`;
-          tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color ?? 'gold';
-          
-          sumGoodRolls += Math.floor(tomeMods.reward_multiplier / this.tomeSettings.highlightReward);
-        }
-        if (meetsMobDebuffRequirements) {
-          const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.highlightMob * 2;
-          tomeElement.children[4].style.border = `${isDouble ? 'thick' : '2px'} solid`;
-          tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color ?? 'white';
-          
-          sumGoodRolls += Math.floor(tomeMods.mob_multiplier / this.tomeSettings.highlightMob);
-        }
-        if (meetsCharacterMultiRequirements) {
-          const isDouble = tomeMods.character_multiplier >= this.tomeSettings.highlightCharacter * 2;
-          tomeElement.children[5].style.border = `${isDouble ? 'thick' : '2px'} solid`;
-          tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color ?? 'white';
-
-          sumGoodRolls += Math.floor(tomeMods.character_multiplier / this.tomeSettings.highlightCharacter);
-        }
-      }
-
-      if (sumGoodRolls >= this.tomeSettings.numGoodRolls) {
-        shouldFadeTome = false;
-      } 
 
       // Fade out tomes that didn't meet requirements
       if (shouldFadeTome) {
@@ -682,6 +600,108 @@ class Script {
         });
       }
     }
+  }
+
+  checkTomeIncomePerSpace(tomeMods, tomeElement) {
+    let incomePerSpace = 0;
+    incomePerSpace += tomeMods.multi_mob / 100 * this.tomeSettings.multiMobWeight;
+  }
+
+  checkTomeMeetsThresholds(tomeMods, tomeElement) {
+    /**
+    * Returns true if given tomes meet thresholds according to the stored tome settings 
+    * Also highlight the tomeElement if threshold is met
+    * TODO: Reverse the tomeFailsRequirements variable
+    */
+    // Requirements are checked here since they're very long
+    const hasNegativeRareLegendaryRolls = tomeMods.lifesteal < 0 || tomeMods.multi_mob < 0 || tomeMods.speed < 0 || tomeMods.skip < 0;
+    const meetsRareRequirements = (
+    (tomeMods.lifesteal > 0 || tomeMods.multi_mob > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.rare
+    );
+    const meetsLegendaryRequirements = (
+    (tomeMods.speed > 0 || tomeMods.skip > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary
+    );
+
+    const meetsWbTomeRequirements = 
+    tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.wb 
+    && tomeMods.elemental_conversion >= 0
+    && tomeMods.character_multiplier >= 0
+    && (tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv
+    || tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb);
+
+    const meetsRewardMultiRequirements = tomeMods.reward_multiplier >= this.tomeSettings.thresholds.reward 
+    && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.reward;
+    const meetsMobDebuffRequirements = tomeMods.mob_multiplier >= this.tomeSettings.thresholds.mobDebuff 
+    && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.mobDebuff
+    && tomeMods.reward_multiplier >= 0;
+    const meetsCharacterMultiRequirements = tomeMods.character_multiplier >= this.tomeSettings.thresholds.character 
+    && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.character
+    && tomeMods.reward_multiplier >= 0;
+
+    let sumGoodRolls = 0; // Count how many requirements were met
+    let tomeFailsRequirements = true;
+
+    // Highlight world boss tomes
+    if (meetsWbTomeRequirements) {
+      let sumRolls = 0;
+
+      if (tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv) {
+        const isDoubleElemental = tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv * 2;
+        sumRolls += isDoubleElemental ? 2 : 1;
+        tomeElement.children[11].style.border = `${isDoubleElemental ? 'thick' : '1px'} solid`;
+        tomeElement.children[11].style.borderColor = 'forestgreen';
+      } 
+
+      if (tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb) {
+        const isDoubleCharacter = tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb * 2;
+        sumRolls += isDoubleCharacter ? 2 : 1;
+        tomeElement.children[5].style.border = `${isDoubleCharacter ? 'thick' : '1px'} solid`;
+        tomeElement.children[5].style.borderColor = 'forestgreen';
+      }
+
+      if (sumRolls > 1) {
+        tomeFailsRequirements = false;
+      }
+    }
+
+    // Highlight other modifiers if they meet the requirements
+    if (!hasNegativeRareLegendaryRolls || this.tomeSettings.thresholds.ignoreNegativeRareLegendary) { 
+      if (meetsRareRequirements) {
+        sumGoodRolls += tomeMods.lifesteal > 0 ? Math.floor(tomeMods.lifesteal / this.tomeSettings.thresholds.lifesteal) : 0;
+        sumGoodRolls += tomeMods.multi_mob > 0 ? Math.floor(tomeMods.multi_mob / this.tomeSettings.thresholds.multiMob) : 0;
+      }
+      if (meetsLegendaryRequirements) {
+        sumGoodRolls += tomeMods.speed > 0 ? Math.floor(tomeMods.speed / this.tomeSettings.thresholds.actionSpeed) : 0;
+        sumGoodRolls += tomeMods.skip > 0 ? Math.floor(tomeMods.skip / this.tomeSettings.thresholds.mobSkip) : 0;
+      }
+
+      if (meetsRewardMultiRequirements) {
+        const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.thresholds.reward * 2;
+        tomeElement.children[3].style.border = `${isDouble ? 'thick' : '2px'} solid`;
+        tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color ?? 'gold';
+        
+        sumGoodRolls += Math.floor(tomeMods.reward_multiplier / this.tomeSettings.thresholds.reward);
+      }
+      if (meetsMobDebuffRequirements) {
+        const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.thresholds.mobDebuff * 2;
+        tomeElement.children[4].style.border = `${isDouble ? 'thick' : '2px'} solid`;
+        tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color ?? 'white';
+        
+        sumGoodRolls += Math.floor(tomeMods.mob_multiplier / this.tomeSettings.thresholds.mobDebuff);
+      }
+      if (meetsCharacterMultiRequirements) {
+        const isDouble = tomeMods.character_multiplier >= this.tomeSettings.thresholds.character * 2;
+        tomeElement.children[5].style.border = `${isDouble ? 'thick' : '2px'} solid`;
+        tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color ?? 'white';
+
+        sumGoodRolls += Math.floor(tomeMods.character_multiplier / this.tomeSettings.thresholds.character);
+      }
+    }
+
+    if (sumGoodRolls >= this.tomeSettings.thresholds.numGoodRolls) {
+      tomeFailsRequirements = false;
+    } 
+    return !tomeFailsRequirements;
   }
 
   async handleWbChestOpening(mutation) {
@@ -1039,36 +1059,36 @@ class Script {
 
     // Fill in input values
     const settingsContainer = settings.childNodes[1];
-    settingsContainer.querySelector('#rewardHighlightSetting').value = (this.tomeSettings.highlightReward / 100).toFixed(2);
-    settingsContainer.querySelector('#mobHighlightSetting').value = (this.tomeSettings.highlightMob / 100).toFixed(2);
-    settingsContainer.querySelector('#characterHighlightSetting').value = (this.tomeSettings.highlightCharacter / 100).toFixed(2);
-    settingsContainer.querySelector('#characterWbHighlightSetting').value = (this.tomeSettings.highlightCharacterWb / 100).toFixed(2);
-    settingsContainer.querySelector('#elementalConvHighlightSetting').value = (this.tomeSettings.highlightElementalConv / 100).toFixed(2);
-    settingsContainer.querySelector('#multiMobHighlightSetting').value = (this.tomeSettings.highlightMultiMob / 100).toFixed(2);
-    settingsContainer.querySelector('#lifestealHighlightSetting').value = (this.tomeSettings.highlightLifesteal / 100).toFixed(2);
-    settingsContainer.querySelector('#actionSpeedHighlightSetting').value = (this.tomeSettings.highlightActionSpeed / 100).toFixed(2);
-    settingsContainer.querySelector('#mobSkipHighlightSetting').value = (this.tomeSettings.highlightMobSkip / 100).toFixed(2);
-    settingsContainer.querySelector('#rewardSpaceSetting').value = this.tomeSettings.spaceLimitReward ?? 6;
-    settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceLimitMob ?? 6;
-    settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceLimitCharacter ?? 6;
-    settingsContainer.querySelector('#wbSpaceSetting').value = this.tomeSettings.spaceLimitWb ?? 9;
-    settingsContainer.querySelector('#rareSpaceSetting').value = this.tomeSettings.spaceLimitRare ?? 9;
-    settingsContainer.querySelector('#legendarySpaceSetting').value = this.tomeSettings.spaceLimitLegendary ?? 9;
-    settingsContainer.querySelector('#numGoodRolls').value = this.tomeSettings.numGoodRolls ?? 1;
-    settingsContainer.querySelector('#ignoreNegativeRareLegendaryRolls').checked = this.tomeSettings.ignoreNegativeRareLegendary ?? false;
+    settingsContainer.querySelector('#rewardHighlightSetting').value = (this.tomeSettings.thresholds.reward / 100).toFixed(2);
+    settingsContainer.querySelector('#mobHighlightSetting').value = (this.tomeSettings.thresholds.mobDebuff / 100).toFixed(2);
+    settingsContainer.querySelector('#characterHighlightSetting').value = (this.tomeSettings.thresholds.character / 100).toFixed(2);
+    settingsContainer.querySelector('#characterWbHighlightSetting').value = (this.tomeSettings.thresholds.characterWb / 100).toFixed(2);
+    settingsContainer.querySelector('#elementalConvHighlightSetting').value = (this.tomeSettings.thresholds.elementalConv / 100).toFixed(2);
+    settingsContainer.querySelector('#multiMobHighlightSetting').value = (this.tomeSettings.thresholds.multiMob / 100).toFixed(2);
+    settingsContainer.querySelector('#lifestealHighlightSetting').value = (this.tomeSettings.thresholds.lifesteal / 100).toFixed(2);
+    settingsContainer.querySelector('#actionSpeedHighlightSetting').value = (this.tomeSettings.thresholds.actionSpeed / 100).toFixed(2);
+    settingsContainer.querySelector('#mobSkipHighlightSetting').value = (this.tomeSettings.thresholds.mobSkip / 100).toFixed(2);
+    settingsContainer.querySelector('#rewardSpaceSetting').value = this.tomeSettings.spaceThresholds.reward ?? 6;
+    settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceThresholds.mobDebuff ?? 6;
+    settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceThresholds.character ?? 6;
+    settingsContainer.querySelector('#wbSpaceSetting').value = this.tomeSettings.spaceThresholds.wb ?? 9;
+    settingsContainer.querySelector('#rareSpaceSetting').value = this.tomeSettings.spaceThresholds.rare ?? 9;
+    settingsContainer.querySelector('#legendarySpaceSetting').value = this.tomeSettings.spaceThresholds.legendary ?? 9;
+    settingsContainer.querySelector('#numGoodRolls').value = this.tomeSettings.thresholds.numGoodRolls ?? 1;
+    settingsContainer.querySelector('#ignoreNegativeRareLegendaryRolls').checked = this.tomeSettings.thresholds.ignoreNegativeRareLegendary ?? false;
     settingsContainer.querySelector('#goldPerKillForTomesEquipped').value = this.tomeSettings.goldKillTomesEquippedAmount ?? 0;
 
-    settingsContainer.querySelector('#actionSpeedWeight').value = this.tomeSettings.actionSpeedWeight ?? 0;
-    settingsContainer.querySelector('#mobSkipWeight').value = this.tomeSettings.mobSkipWeight ?? 0;
-    settingsContainer.querySelector('#multiMobWeight').value = this.tomeSettings.multiMobWeight ?? 0;
-    settingsContainer.querySelector('#lifestealWeight').value = this.tomeSettings.lifestealWeight ?? 0;
-    settingsContainer.querySelector('#rewardWeight').value = this.tomeSettings.rewardWeight ?? 0;
-    settingsContainer.querySelector('#mobDebuffWeight').value = this.tomeSettings.mobDebuffWeight ?? 0;
-    settingsContainer.querySelector('#characterWeight').value = this.tomeSettings.characterWeight ?? 0;
-    settingsContainer.querySelector('#incomePerSpaceThreshold').value = this.tomeSettings.incomePerSpaceThreshold ?? 0;
-    settingsContainer.querySelector('#wbCharacterWeight').value = this.tomeSettings.wbCharacterWeight ?? 0;
-    settingsContainer.querySelector('#wbElementalConvWeight').value = this.tomeSettings.wbElementalConvWeight ?? 0;
-    settingsContainer.querySelector('#wbPowerPerSpaceThreshold').value = this.tomeSettings.wbPowerPerSpaceThreshold ?? 0;
+    settingsContainer.querySelector('#actionSpeedWeight').value = this.tomeSettings.weights.actionSpeed ?? 0;
+    settingsContainer.querySelector('#mobSkipWeight').value = this.tomeSettings.weights.mobSkip ?? 0;
+    settingsContainer.querySelector('#multiMobWeight').value = this.tomeSettings.weights.multiMob ?? 0;
+    settingsContainer.querySelector('#lifestealWeight').value = this.tomeSettings.weights.lifesteal ?? 0;
+    settingsContainer.querySelector('#rewardWeight').value = this.tomeSettings.weights.reward ?? 0;
+    settingsContainer.querySelector('#mobDebuffWeight').value = this.tomeSettings.weights.mobDebuff ?? 0;
+    settingsContainer.querySelector('#characterWeight').value = this.tomeSettings.weights.character ?? 0;
+    settingsContainer.querySelector('#incomePerSpaceThreshold').value = this.tomeSettings.weights.incomePerSpaceThreshold ?? 0;
+    settingsContainer.querySelector('#wbCharacterWeight').value = this.tomeSettings.weights.wbCharacter ?? 0;
+    settingsContainer.querySelector('#wbElementalConvWeight').value = this.tomeSettings.weights.wbElementalConv ?? 0;
+    settingsContainer.querySelector('#wbPowerPerSpaceThreshold').value = this.tomeSettings.weights.wbPowerPerSpaceThreshold ?? 0;
 
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
@@ -1098,38 +1118,44 @@ class Script {
       // Get all of the values
       const container = document.querySelector('#tomeSettingsContainer');
       const tomeSettings = {
-        highlightReward: container.querySelector('#rewardHighlightSetting').valueAsNumber * 100,
-        highlightMob: container.querySelector('#mobHighlightSetting').valueAsNumber * 100,
-        highlightCharacter: container.querySelector('#characterHighlightSetting').valueAsNumber * 100,
-        highlightCharacterWb: container.querySelector('#characterWbHighlightSetting').valueAsNumber * 100,
-        highlightElementalConv: container.querySelector('#elementalConvHighlightSetting').valueAsNumber * 100,
-        highlightMultiMob: container.querySelector('#multiMobHighlightSetting').valueAsNumber * 100,
-        highlightLifesteal: container.querySelector('#lifestealHighlightSetting').valueAsNumber * 100,
-        highlightActionSpeed: container.querySelector('#actionSpeedHighlightSetting').valueAsNumber * 100,
-        highlightMobSkip: container.querySelector('#mobSkipHighlightSetting').valueAsNumber * 100,
-        spaceLimitReward: container.querySelector('#rewardSpaceSetting').valueAsNumber,
-        spaceLimitMob: container.querySelector('#mobSpaceSetting').valueAsNumber,
-        spaceLimitCharacter: container.querySelector('#characterSpaceSetting').valueAsNumber,
-        spaceLimitWb: container.querySelector('#wbSpaceSetting').valueAsNumber,
-        spaceLimitRare: container.querySelector('#rareSpaceSetting').valueAsNumber,
-        spaceLimitLegendary: container.querySelector('#legendarySpaceSetting').valueAsNumber,
-        numGoodRolls: container.querySelector('#numGoodRolls').valueAsNumber,
-        ignoreNegativeRareLegendary: container.querySelector('#ignoreNegativeRareLegendaryRolls').checked,
+        thresholds: {
+          reward: container.querySelector('#rewardHighlightSetting').valueAsNumber * 100,
+          mobDebuff: container.querySelector('#mobHighlightSetting').valueAsNumber * 100,
+          character: container.querySelector('#characterHighlightSetting').valueAsNumber * 100,
+          characterWb: container.querySelector('#characterWbHighlightSetting').valueAsNumber * 100,
+          elementalConv: container.querySelector('#elementalConvHighlightSetting').valueAsNumber * 100,
+          multiMob: container.querySelector('#multiMobHighlightSetting').valueAsNumber * 100,
+          lifesteal: container.querySelector('#lifestealHighlightSetting').valueAsNumber * 100,
+          actionSpeed: container.querySelector('#actionSpeedHighlightSetting').valueAsNumber * 100,
+          mobSkip: container.querySelector('#mobSkipHighlightSetting').valueAsNumber * 100,
+          ignoreNegativeRareLegendary: container.querySelector('#ignoreNegativeRareLegendaryRolls').checked,
+          numGoodRolls: container.querySelector('#numGoodRolls').valueAsNumber,
+        },
+        spaceThresholds: {
+          reward: container.querySelector('#rewardSpaceSetting').valueAsNumber,
+          mobDebuff: container.querySelector('#mobSpaceSetting').valueAsNumber,
+          character: container.querySelector('#characterSpaceSetting').valueAsNumber,
+          wb: container.querySelector('#wbSpaceSetting').valueAsNumber,
+          rare: container.querySelector('#rareSpaceSetting').valueAsNumber,
+          legendary: container.querySelector('#legendarySpaceSetting').valueAsNumber,
+        },
         goldKillTomesEquippedAmount: container.querySelector('#goldPerKillForTomesEquipped').valueAsNumber,
-        actionSpeedWeight: container.querySelector('#actionSpeedWeight').valueAsNumber,
-        mobSkipWeight: container.querySelector('#mobSkipWeight').valueAsNumber,
-        multiMobWeight: container.querySelector('#multiMobWeight').valueAsNumber,
-        lifestealWeight: container.querySelector('#lifestealWeight').valueAsNumber,
-        rewardWeight: container.querySelector('#rewardWeight').valueAsNumber,
-        mobDebuffWeight: container.querySelector('#mobDebuffWeight').valueAsNumber,
-        characterWeight: container.querySelector('#characterWeight').valueAsNumber,
-        incomePerSpaceThreshold: container.querySelector('#incomePerSpaceThreshold').valueAsNumber,
-        wbCharacterWeight: container.querySelector('#wbCharacterWeight').valueAsNumber,
-        wbElementalConvWeight: container.querySelector('#wbElementalConvWeight').valueAsNumber,
-        wbPowerPerSpaceThreshold: container.querySelector('#wbPowerPerSpaceThreshold').valueAsNumber,
+        weights: {
+          actionSpeed: container.querySelector('#actionSpeedWeight').valueAsNumber,
+          mobSkip: container.querySelector('#mobSkipWeight').valueAsNumber,
+          multiMob: container.querySelector('#multiMobWeight').valueAsNumber,
+          lifesteal: container.querySelector('#lifestealWeight').valueAsNumber,
+          reward: container.querySelector('#rewardWeight').valueAsNumber,
+          mobDebuff: container.querySelector('#mobDebuffWeight').valueAsNumber,
+          character: container.querySelector('#characterWeight').valueAsNumber,
+          incomePerSpaceThreshold: container.querySelector('#incomePerSpaceThreshold').valueAsNumber,
+          wbCharacter: container.querySelector('#wbCharacterWeight').valueAsNumber,
+          wbElementalConv: container.querySelector('#wbElementalConvWeight').valueAsNumber,
+          wbPowerPerSpaceThreshold: container.querySelector('#wbPowerPerSpaceThreshold').valueAsNumber,
+        },
       };
       // Sanitize inputs
-      for (const [key, value] of Object.entries(tomeSettings)) {
+      for (const [key, value] of Object.entries({...this.tomeSettings.thresholds, ...this.tomeSettings.spaceThresholds, ...this.tomeSettings.weights})) {
         this.tomeSettings[key] = isNaN(value) ? this.tomeSettings[key] : value;
       }
       localStorage.setItem(`${this.playerId}:QuesBS_tomeSettings`, JSON.stringify(this.tomeSettings));
