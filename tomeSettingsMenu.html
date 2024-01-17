@@ -121,7 +121,12 @@
               <input type="number" id="wbSpaceSetting" value="" placeholder="6" style="width: 70%">
             </div>
           </div>
-          <p style="text-align: center;">These will only highlight double rolls</p>
+          <div style="display: flex; justify-content: space-around;">
+            <div style="display: inherit; justify-content: center; margin: 0.5rem;">
+              <label for="numGoodRollsWb">Minimum number of good rolls:</label>
+              <input type="number" id="numGoodRollsWb" value="" placeholder="1" style="width: 15%; margin-left: 0.5rem">
+            </div>
+          </div>
         </details>
       </div>
 
@@ -190,6 +195,7 @@
         </details>
       </div>
 
+      <!-- Hide mods settings -->
       <details>
         <summary style="text-align: center;">
           Hide Tome Modifiers

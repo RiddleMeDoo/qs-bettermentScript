@@ -79,6 +79,7 @@ class Script {
       actionSpeed: this.tomeSettings.highlightActionSpeed ?? 1,
       mobSkip: this.tomeSettings.highlightMobSkip ?? 1,
       numGoodRolls: this.tomeSettings.numGoodRolls ?? 1,
+      numGoodRollsWb: 2,
       ignoreNegativeRareLegendary: this.tomeSettings.ignoreNegativeRareLegendary ?? false,
     }
     this.tomeSettings.spaceThresholds = this.tomeSettings.spaceThresholds ?? {
@@ -1133,6 +1134,7 @@ class Script {
     settingsContainer.querySelector('#numGoodRolls').value = this.tomeSettings.thresholds.numGoodRolls ?? 1;
     settingsContainer.querySelector('#ignoreNegativeRareLegendaryRolls').checked = this.tomeSettings.thresholds.ignoreNegativeRareLegendary ?? false;
     settingsContainer.querySelector('#goldPerKillForTomesEquipped').value = this.tomeSettings.goldKillTomesEquippedAmount ?? 0;
+    settingsContainer.querySelector('#numGoodRollsWb').value = this.tomeSettings.thresholds.numGoodRollsWb ?? 2;
 
     settingsContainer.querySelector('#actionSpeedWeight').value = this.tomeSettings.weights.actionSpeed ?? 0;
     settingsContainer.querySelector('#mobSkipWeight').value = this.tomeSettings.weights.mobSkip ?? 0;
@@ -1210,6 +1212,7 @@ class Script {
           mobSkip: container.querySelector('#mobSkipHighlightSetting').valueAsNumber * 100,
           ignoreNegativeRareLegendary: container.querySelector('#ignoreNegativeRareLegendaryRolls').checked,
           numGoodRolls: container.querySelector('#numGoodRolls').valueAsNumber,
+          numGoodRollsWb: container.querySelector('#numGoodRollsWb').valueAsNumber,
         },
         spaceThresholds: {
           reward: container.querySelector('#rewardSpaceSetting').valueAsNumber,
