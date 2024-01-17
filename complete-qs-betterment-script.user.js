@@ -1157,6 +1157,11 @@ class Script {
     settingsContainer.querySelector('#hideRangedResistance').checked = this.tomeSettings.hideMods.rangedResistance ?? false;
     settingsContainer.querySelector('#hideElementalConversion').checked = this.tomeSettings.hideMods.elementalConversion ?? false;
     settingsContainer.querySelector('#hideFortifyReduction').checked = this.tomeSettings.hideMods.fortifyReduction ?? false;
+    if (this.tomeSettings.useWeightSettings) {
+      settingsContainer.querySelector('#toggleWeightSettings').className = 'mat-focus-indicator mat-stroked-button mat-button-base';
+    } else {
+      settingsContainer.querySelector('#toggleThresholdSettings').className = 'mat-focus-indicator mat-stroked-button mat-button-base';
+    }
 
     // Set up buttons
     openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
@@ -1170,14 +1175,21 @@ class Script {
     const toggleWeightSettings = (yes) => {
       const thresholdSettingsBlock = settingsContainer.querySelector('#thresholdSettingsBlock');
       const weightSettingsBlock = settingsContainer.querySelector('#tomeWeightSettingsBlock');
+      const toggleThresholdButton = settingsContainer.querySelector('#toggleThresholdSettings');
+      const toggleWeightButton = settingsContainer.querySelector('#toggleWeightSettings');
+
       if(yes) {
         weightSettingsBlock.style.display = 'block';
         thresholdSettingsBlock.style.display = 'none';
         this.tomeSettings.useWeightSettings = true;
+        toggleThresholdButton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
+        toggleWeightButton.className = 'mat-focus-indicator mat-stroked-button mat-button-base';
       } else {
         weightSettingsBlock.style.display = 'none';
         thresholdSettingsBlock.style.display = 'block';
         this.tomeSettings.useWeightSettings = false;
+        toggleThresholdButton.className = 'mat-focus-indicator mat-stroked-button mat-button-base';
+        toggleWeightButton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
       }
     }
     settingsContainer.querySelector('#toggleThresholdSettings').onclick = () => toggleWeightSettings(false);
