@@ -681,8 +681,6 @@ class Script {
 
     const meetsWbTomeRequirements = 
     tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.wb 
-    && tomeMods.elemental_conversion >= 0
-    && tomeMods.character_multiplier >= 0
     && (tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv
     || tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb);
 
@@ -704,19 +702,19 @@ class Script {
 
       if (tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv) {
         const isDoubleElemental = tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv * 2;
-        sumRolls += isDoubleElemental ? 2 : 1;
+        sumRolls += Math.floor(tomeMods.elemental_conversion / this.tomeSettings.thresholds.elementalConv);
         tomeElement.children[11].style.border = `${isDoubleElemental ? 'thick' : '1px'} solid`;
         tomeElement.children[11].style.borderColor = 'forestgreen';
       } 
 
       if (tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb) {
         const isDoubleCharacter = tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb * 2;
-        sumRolls += isDoubleCharacter ? 2 : 1;
+        sumRolls += Math.floor(tomeMods.character_multiplier / this.tomeSettings.thresholds.characterWb);
         tomeElement.children[5].style.border = `${isDoubleCharacter ? 'thick' : '1px'} solid`;
         tomeElement.children[5].style.borderColor = 'forestgreen';
       }
 
-      if (sumRolls > 1) {
+      if (sumRolls >= this.tomeSettings.thresholds.numGoodRollsWb) {
         tomeFailsRequirements = false;
       }
     }
