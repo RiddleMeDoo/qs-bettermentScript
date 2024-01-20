@@ -955,10 +955,11 @@ class Script {
         // Insert end time
         timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, isVillage);
         row.appendChild(timeElem);
-
+        
         //Add ratio
-        const reward = row.children[2].innerText.split(' ')[0].replace(/,/g, '');
-        const ratio = Math.round(parseNumber(reward) / actionsNeeded).toLocaleString();
+        const expNeeded = this.gameData.playerLevelsService.battling.exp.needed;
+        const reward = parseNumber(row.children[2].innerText.split(' ')[0].replace(/,/g, '')) / 100;
+        const ratio = Math.round((expNeeded * reward) / actionsNeeded).toLocaleString();
         row.children[2].innerText = `${row.children[2].innerText} (${ratio} exp/action)`;
 
         // Replace exp requirement with action requirement
