@@ -53,7 +53,7 @@ class Script {
       this.villageSettings = {
         strActions: 30000,
         taxObjectivePercent: 0,
-        resActionRatio: 0,
+        resActionRatio: 999999999999,
       };
     }
 
@@ -1081,10 +1081,10 @@ class Script {
     const resActionSetting = questSettings.firstChild.children[1].cloneNode(true);
     resActionSetting.firstChild.innerText = 'Min ratio for res/action quests';
     resActionSetting.children[1].id = 'minResActionSetting';
-    resActionSetting.children[1].firstChild.value = this.villageSettings.resActionRatio ?? 0;
+    resActionSetting.children[1].firstChild.value = this.villageSettings.resActionRatio ?? 999999999999;
     resActionSetting.children[1].firstChild.style.width = '9em';
     const taxObjectiveSetting = questSettings.firstChild.children[1].cloneNode(true);
-    taxObjectiveSetting.firstChild.innerText = '% Tax objective (0.5~1.25)';
+    taxObjectiveSetting.firstChild.innerText = 'Max tax objective % (0.5~1.25)';
     taxObjectiveSetting.children[1].id = 'taxObjectiveSetting';
     taxObjectiveSetting.children[1].firstChild.value = this.villageSettings.taxObjectivePercent ?? 0;
     // Insert
