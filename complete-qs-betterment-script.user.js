@@ -51,7 +51,9 @@ class Script {
       localStorage.setItem(`${this.playerId}:QuesBS_villageSettings`, JSON.stringify(this.villageSettings));
     } else if(!this.villageSettings) {
       this.villageSettings = {
-        strActions: 30000
+        strActions: 30000,
+        taxObjectivePercent: 0,
+        resActionRatio: 0,
       };
     }
 
@@ -215,6 +217,9 @@ class Script {
     let villageService = this.gameData.playerVillageService;
     this.quest.villageNumRefreshes = villageService.general.dailyQuestsBought + 5;
     this.quest.villageRefreshesUsed = villageService.general.dailyQuestsUsed;
+    const maxBuildingLevel = Object.values(villageService.buildings).reduce((currMax, building) => Math.max(currMax, building.amount), 0);
+    const buildingCost = villageService.calculateVillageBuildingUpgradeCost(maxBuildingLevel);
+    this.quest.villageMaxResCost = buildingCost[1].cost * 4 + (buildingCost?.[5]?.cost ?? 0);
   }
 
   async updateKdInfo() {
@@ -984,9 +989,13 @@ class Script {
         const objectiveText = row.children[1].innerText.split(' ');
         let timeElem = null;
         if(objectiveText[1] === 'actions') {
-          //Add border if there's a str point reward
-          const reward = row.children[2].innerText.split(' ')[1];
+          //Add border if there's a str point reward or it meets the minResAction threshold
+          const rewardText = row.children[2].innerText.split(' ');
+          const reward = rewardText[1];
           if(reward === 'strength' && parseNumber(objectiveText[0]) <= this.villageSettings.strActions) {
+            row.children[2].style.border = 'inset';
+          } else if (parseNumber(rewardText[0]) / parseNumber(objectiveText[0]) >= this.villageSettings.resActionRatio) {  
+            // res reward ratio meets threshold setting
             row.children[2].style.border = 'inset';
           }
           //Insert end time
@@ -1057,6 +1066,8 @@ class Script {
 
     //Clone a copy of the armory settings to match the css style
     const questSettings = settingsOverview.firstChild.children[1].cloneNode(true);
+    questSettings.style.width = '35%';
+    questSettings.style.maxWidth = '';
     //Modify to our liking
     questSettings.firstChild.children[3].remove();
     questSettings.firstChild.children[2].remove();
@@ -1066,15 +1077,36 @@ class Script {
     questSettings.firstChild.children[1].children[1].style.width = '50%';
     questSettings.firstChild.children[1].children[1].firstChild.value = this.villageSettings.strActions;
     questSettings.firstChild.children[1].children[1].firstChild.style.width = '6em';
-    questSettings.firstChild.children[2].firstChild.firstChild.innerText = 'Save QuesBS Quests';
+    // Clone for extra rows
+    const resActionSetting = questSettings.firstChild.children[1].cloneNode(true);
+    resActionSetting.firstChild.innerText = 'Min ratio for res/action quests';
+    resActionSetting.children[1].id = 'minResActionSetting';
+    resActionSetting.children[1].firstChild.value = this.villageSettings.resActionRatio ?? 0;
+    resActionSetting.children[1].firstChild.style.width = '9em';
+    const taxObjectiveSetting = questSettings.firstChild.children[1].cloneNode(true);
+    taxObjectiveSetting.firstChild.innerText = '% Tax objective (0.5~1.25)';
+    taxObjectiveSetting.children[1].id = 'taxObjectiveSetting';
+    taxObjectiveSetting.children[1].firstChild.value = this.villageSettings.taxObjectivePercent ?? 0;
+    // Insert
+    const saveButton = questSettings.firstChild.children[2];
+    questSettings.firstChild.insertBefore(resActionSetting, saveButton);
+    questSettings.firstChild.insertBefore(taxObjectiveSetting, saveButton);
+
+    saveButton.firstChild.firstChild.innerText = 'Save QuesBS Quests';
     //Add a save function for button
-    questSettings.firstChild.children[2].firstChild.onclick = () => {
+    saveButton.firstChild.onclick = () => {
       const newActions = parseNumber(document.getElementById('actionsLimitSetting').firstChild.value);
+      const newResActions = parseNumber(document.getElementById('minResActionSetting').firstChild.value);
+      const newTaxObjectivePercent = parseNumber(document.getElementById('taxObjectiveSetting').firstChild.value);
       //Data validation
-      if(isNaN(newActions)) {
+      if(isNaN(newActions) || isNaN(newTaxObjectivePercent) || isNaN(newResActions)) {
         this.gameData.snackbarService.openSnackbar('Error: Value should be a number'); //feedback popup
+      } else if (newTaxObjectivePercent < 0 || newTaxObjectivePercent > 1.25) {
+        this.gameData.snackbarService.openSnackbar('Error: Tax % should be between 0 and 1.25');
       } else {
         this.villageSettings.strActions = newActions;
+        this.villageSettings.taxObjectivePercent = newTaxObjectivePercent;
+        this.villageSettings.resActionRatio = newResActions;
         localStorage.setItem(`${this.playerId}:QuesBS_villageSettings`, JSON.stringify(this.villageSettings));
         this.gameData.snackbarService.openSnackbar('Settings saved successfully'); //feedback popup
       }
@@ -1260,6 +1292,7 @@ class Script {
         }
       }
       localStorage.setItem(`${this.playerId}:QuesBS_tomeSettings`, JSON.stringify(this.tomeSettings));
+      this.gameData.snackbarService.openSnackbar('Store settings saved successfully');
       // Refresh highlighting
       const target = $('app-catacomb-tome-store > .scrollbar > div > div > .d-flex.flex-wrap.gap-1');
       this.handleCatacombTomeStore({target: target[0]});
