@@ -82,7 +82,6 @@ class Script {
       mobSkip: this.tomeSettings.highlightMobSkip ?? 1,
       numGoodRolls: this.tomeSettings.numGoodRolls ?? 1,
       numGoodRollsWb: 2,
-      ignoreNegativeRareLegendary: this.tomeSettings.ignoreNegativeRareLegendary ?? false,
     }
     this.tomeSettings.spaceThresholds = this.tomeSettings.spaceThresholds ?? {
       reward: this.tomeSettings.spaceLimitReward ?? 6,
@@ -783,8 +782,8 @@ class Script {
     /**
      * Highlight drops that are desirable
      * - Gems over the kd level
-     * - Descriptions with max depth 26+
-     * - Equipment with depth 23+
+     * - Descriptions with max depth 31+
+     * - Equipment with depth 31+
     **/
     // Check if first time opening chests on page
     if (mutation?.addedNodes?.[0]?.innerText && mutation.addedNodes[0].innerText.startsWith('After')) {
@@ -812,11 +811,11 @@ class Script {
           if (dropType === 'gem' && parseNumber(text[1]) < this.kdExploLevel) {
             // Gem has to be higher level than kd exploration level
             continue;
-          } else if (dropType === 'description' && parseNumber(text[1].split('-')[1]) <= 25) {
-            // Description has to be max depth 26+
+          } else if (dropType === 'description' && parseNumber(text[1].split('-')[1]) <= 30) {
+            // Description has to be max depth 31+
             continue;
-          } else if (dropType === 'item' && parseNumber(text[1]) < 23) {
-            // Fighter item needs to be at a good potential depth
+          } else if (dropType === 'item' && parseNumber(text[1]) < 31) {
+            // Fighter item must be a rare drop
             continue;
           }
           // Highlight the element
@@ -1178,7 +1177,6 @@ class Script {
     settingsContainer.querySelector('#rareSpaceSetting').value = this.tomeSettings.spaceThresholds.rare ?? 9;
     settingsContainer.querySelector('#legendarySpaceSetting').value = this.tomeSettings.spaceThresholds.legendary ?? 9;
     settingsContainer.querySelector('#numGoodRolls').value = this.tomeSettings.thresholds.numGoodRolls ?? 1;
-    settingsContainer.querySelector('#ignoreNegativeRareLegendaryRolls').checked = this.tomeSettings.thresholds.ignoreNegativeRareLegendary ?? false;
     settingsContainer.querySelector('#goldPerKillForTomesEquipped').value = this.tomeSettings.goldKillTomesEquippedAmount ?? 0;
     settingsContainer.querySelector('#numGoodRollsWb').value = this.tomeSettings.thresholds.numGoodRollsWb ?? 2;
 
@@ -1256,7 +1254,6 @@ class Script {
           lifesteal: container.querySelector('#lifestealHighlightSetting').valueAsNumber * 100,
           actionSpeed: container.querySelector('#actionSpeedHighlightSetting').valueAsNumber * 100,
           mobSkip: container.querySelector('#mobSkipHighlightSetting').valueAsNumber * 100,
-          ignoreNegativeRareLegendary: container.querySelector('#ignoreNegativeRareLegendaryRolls').checked,
           numGoodRolls: container.querySelector('#numGoodRolls').valueAsNumber,
           numGoodRollsWb: container.querySelector('#numGoodRollsWb').valueAsNumber,
         },
