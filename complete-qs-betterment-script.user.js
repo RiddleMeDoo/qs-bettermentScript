@@ -978,7 +978,7 @@ class Script {
         //Add ratio
         const expNeeded = this.gameData.playerLevelsService.battling.exp.needed;
         const reward = parseNumber(row.children[2].innerText.split(' ')[0].replace(/,/g, '')) / 100;
-        const ratio = Math.round((expNeeded * reward) / actionsNeeded).toLocaleString();
+        const ratio = Math.round((expNeeded * reward) / (objective / baseGoldPerAction)).toLocaleString();
         row.children[2].innerText = `${row.children[2].innerText} (${ratio} exp/action)`;
 
         // Replace exp requirement with action requirement
