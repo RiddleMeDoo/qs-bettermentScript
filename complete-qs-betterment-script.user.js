@@ -591,11 +591,31 @@ class Script {
       const tomeMods = tomes[i];
       const tomeElement = tomeElements[i].firstChild;
 
-      let shouldFadeTome = false;
+      let shouldFadeTome = true;
+      let highlightIncome = false;
+
       if (this.tomeSettings?.useWeightSettings) {
-        shouldFadeTome = !this.checkAndDisplayTomeIncomePerSpace(tomeMods, tomeElement);
+        // Create row after tome mods to display the power per space values
+        const displayEle = tomeElement.querySelector(`#perspacedisplay-${tomeMods.id}`) ?? document.createElement('div');
+        displayEle.id = `perspacedisplay-${tomeMods.id}`;
+        displayEle.className = 'd-flex justify-content-between ng-star-inserted';
+        tomeElement.appendChild(displayEle, tomeElement.nextSibling.firstChild);
+
+        if (this.checkTomeIncomePower(tomeMods, displayEle)) {  // Displays income power as well
+          shouldFadeTome = false;
+          highlightIncome = true;
+        } 
+        if (this.checkTomeWBPower(tomeMods, displayEle)) {  // Displays wb power as well
+          shouldFadeTome = false;
+        }
       } else {
-        shouldFadeTome = !this.checkAndDisplayTomeMeetsThresholds(tomeMods, tomeElement);
+        if (this.checkTomeIncomeMeetsThresholds(tomeMods, tomeElement)) {
+          shouldFadeTome = false;
+          highlightIncome = true;
+        } 
+        if (this.checkTomeWBMeetsThresholds(tomeMods, tomeElement)) {
+          shouldFadeTome = false;
+        }
       }
 
       // Fade out tomes that didn't meet requirements
@@ -605,7 +625,11 @@ class Script {
            child.style.opacity = "0.4";
         });
       } else {
-        tomeElement.parentElement.style.boxShadow = '0 0 30px 15px #48abe0';
+        if (highlightIncome) {
+          tomeElement.parentElement.style.boxShadow = '0 0 30px 15px #48abe0';
+        } else {
+          tomeElement.parentElement.style.boxShadow = '0 0 30px 15px green';
+        }
       }
 
       // Hide modifiers on tomes according to the settings
@@ -625,7 +649,11 @@ class Script {
     }
   }
 
-  checkAndDisplayTomeIncomePerSpace(tomeMods, tomeElement) {
+  checkTomeIncomePower(tomeMods, powerDisplayEle) {
+    /**
+     * Returns true if the tomeMods are weighted and meet the thresholds according to the tome settings for income.
+     * It also displays the income power on the tome using the powerDisplayEle elememt
+     */
     let incomePerSpace = 0;
     incomePerSpace += (tomeMods.multi_mob ?? 0) / 100 * (this.tomeSettings.weights.multiMob ?? 0);
     incomePerSpace += (tomeMods.character_multiplier ?? 0) / 100 * (this.tomeSettings.weights.character ?? 0);
@@ -636,132 +664,119 @@ class Script {
     incomePerSpace += (tomeMods.mob_multiplier ?? 0) / 100 * (this.tomeSettings.weights.mobDebuff ?? 0);
     incomePerSpace /= tomeMods.space_requirement;
 
+    // Display the income power per space in the powerDisplayEle
+    const incomePerSpaceEle = powerDisplayEle.querySelector(`#incomeperspace-${tomeMods.id}`) ?? document.createElement('div');
+    incomePerSpaceEle.id = `incomeperspace-${tomeMods.id}`;
+    incomePerSpaceEle.innerText = `Income: ${Math.round(incomePerSpace).toLocaleString()}`;
+    powerDisplayEle.appendChild(incomePerSpaceEle);
+
+    // Check 
+    if (incomePerSpace >= this.tomeSettings.weights.incomePerSpaceThreshold) {
+      incomePerSpaceEle.style.color = 'gold';
+      return true;
+    }
+    return false;
+  }
+
+  checkTomeWBPower(tomeMods, powerDisplayEle) {
+    /**
+     * Returns true if the tomeMods are weighted and meet the thresholds according to the tome settings for world boss.
+     * It also displays the WB power on the tome using the powerDisplayEle elememt
+     */
     let wbPowerPerSpace = (tomeMods.character_multiplier ?? 0) / 100.0 * (this.tomeSettings.weights.wbCharacter ?? 0);
     wbPowerPerSpace += (tomeMods.elemental_conversion ?? 0) / 100.0 * (this.tomeSettings.weights.wbElementalConv ?? 0);
     wbPowerPerSpace /= tomeMods.space_requirement;
 
-    let meetsRequirements = false;
-
-    // Display the numbers in the tomeElement
-    const displayEle = tomeElement.querySelector(`#perspacedisplay-${tomeMods.id}`) ?? document.createElement('div');
-    const incomePerSpaceEle = displayEle.querySelector(`#incomeperspace-${tomeMods.id}`) ?? document.createElement('div');
-    incomePerSpaceEle.id = `incomeperspace-${tomeMods.id}`;
-    incomePerSpaceEle.innerText = `Income: ${Math.round(incomePerSpace).toLocaleString()}`;
-    if (incomePerSpace >= this.tomeSettings.weights.incomePerSpaceThreshold) {
-      meetsRequirements = true;
-      incomePerSpaceEle.style.color = 'gold';
-    }
-
-    const wbPowerPerSpaceEle = displayEle.querySelector(`#wbpowerperspace-${tomeMods.id}`) ?? document.createElement('div');
+    // Display the WB power per space in the powerDisplayEle
+    const wbPowerPerSpaceEle = powerDisplayEle.querySelector(`#wbpowerperspace-${tomeMods.id}`) ?? document.createElement('div');
     wbPowerPerSpaceEle.id = `wbpowerperspace-${tomeMods.id}`;
     wbPowerPerSpaceEle.innerText = `WB: ${Math.round(wbPowerPerSpace).toLocaleString()}`;
-    if (wbPowerPerSpace >= this.tomeSettings.weights.wbPowerPerSpaceThreshold) {
-      meetsRequirements = true;
-      wbPowerPerSpaceEle.style.color = 'forestgreen';
-    }
+    powerDisplayEle.appendChild(wbPowerPerSpaceEle);
 
-    // Add the text elements to the tomes
-    displayEle.appendChild(incomePerSpaceEle);
-    displayEle.appendChild(wbPowerPerSpaceEle);
-    displayEle.id = `perspacedisplay-${tomeMods.id}`;
-    displayEle.className = 'd-flex justify-content-between ng-star-inserted';
-    tomeElement.appendChild(displayEle, tomeElement.nextSibling.firstChild);
-    return meetsRequirements;
+    if (wbPowerPerSpace >= this.tomeSettings.weights.wbPowerPerSpaceThreshold) {
+      wbPowerPerSpaceEle.style.color = 'forestgreen';
+      return true;
+    }
+    return false;
   }
 
-  checkAndDisplayTomeMeetsThresholds(tomeMods, tomeElement) {
+  checkTomeIncomeMeetsThresholds(tomeMods, tomeElement) {
     /**
-    * Returns true if given tomes meet thresholds according to the stored tome settings 
-    * Also highlight the tomeElement if threshold is met
-    * TODO: Reverse the tomeFailsRequirements variable
+    * Returns true if given tomes meets thresholds accored to the stored tome settings for income
+    * Also highlight the tomeElement if threshold is met 
     */
-    // Requirements are checked here since they're very long
-    const hasNegativeRareLegendaryRolls = tomeMods.lifesteal < 0 || tomeMods.multi_mob < 0 || tomeMods.speed < 0 || tomeMods.skip < 0;
-    const meetsRareRequirements = (
-    (tomeMods.lifesteal > 0 || tomeMods.multi_mob > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.rare
-    );
-    const meetsLegendaryRequirements = (
-    (tomeMods.speed > 0 || tomeMods.skip > 0) && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary
-    );
+    let sumGoodRolls = 0;
+    // Check each important mods: reward, character, mob, lifesteal, multi mob, action speed, mob skip
+    // For each mod, if it meets the settings highlight the mod and increment the number of rolls
+    if (tomeMods.reward_multiplier >= this.tomeSettings.thresholds.reward 
+      && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.reward
+    ) {
+      const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.thresholds.reward * 2;
+      tomeElement.children[3].style.border = `${isDouble ? 'thick' : '2px'} solid`;
+      tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color ?? 'gold';
+      
+      sumGoodRolls += Math.floor(tomeMods.reward_multiplier / this.tomeSettings.thresholds.reward);
+    }
+    if (tomeMods.mob_multiplier >= this.tomeSettings.thresholds.mobDebuff 
+      && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.mobDebuff
+    ) {
+      const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.thresholds.mobDebuff * 2;
+      tomeElement.children[4].style.border = `${isDouble ? 'thick' : '2px'} solid`;
+      tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color ?? 'white';
+      
+      sumGoodRolls += Math.floor(tomeMods.mob_multiplier / this.tomeSettings.thresholds.mobDebuff);
+    }
+    if (tomeMods.character_multiplier >= this.tomeSettings.thresholds.character 
+      && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.character
+    ) {
+      const isDouble = tomeMods.character_multiplier >= this.tomeSettings.thresholds.character * 2;
+      tomeElement.children[5].style.border = `${isDouble ? 'thick' : '2px'} solid`;
+      tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color ?? 'white';
 
-    const meetsWbTomeRequirements = 
-    tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.wb 
-    && (tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv
-    || tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb);
-
-    const meetsRewardMultiRequirements = tomeMods.reward_multiplier >= this.tomeSettings.thresholds.reward 
-    && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.reward;
-    const meetsMobDebuffRequirements = tomeMods.mob_multiplier >= this.tomeSettings.thresholds.mobDebuff 
-    && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.mobDebuff
-    && tomeMods.reward_multiplier >= 0;
-    const meetsCharacterMultiRequirements = tomeMods.character_multiplier >= this.tomeSettings.thresholds.character 
-    && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.character
-    && tomeMods.reward_multiplier >= 0;
-
-    let sumGoodRolls = 0; // Count how many requirements were met
-    let tomeFailsRequirements = true;
-
-    // Highlight world boss tomes
-    if (meetsWbTomeRequirements) {
-      let sumRolls = 0;
-
-      if (tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv) {
-        const isDoubleElemental = tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv * 2;
-        sumRolls += Math.floor(tomeMods.elemental_conversion / this.tomeSettings.thresholds.elementalConv);
-        tomeElement.children[11].style.border = `${isDoubleElemental ? 'thick' : '1px'} solid`;
-        tomeElement.children[11].style.borderColor = 'forestgreen';
-      } 
-
-      if (tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb) {
-        const isDoubleCharacter = tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb * 2;
-        sumRolls += Math.floor(tomeMods.character_multiplier / this.tomeSettings.thresholds.characterWb);
-        tomeElement.children[5].style.border = `${isDoubleCharacter ? 'thick' : '1px'} solid`;
-        tomeElement.children[5].style.borderColor = 'forestgreen';
-      }
-
-      if (sumRolls >= this.tomeSettings.thresholds.numGoodRollsWb) {
-        tomeFailsRequirements = false;
-      }
+      sumGoodRolls += Math.floor(tomeMods.character_multiplier / this.tomeSettings.thresholds.character);
+    }
+    if (tomeMods.lifesteal >= this.tomeSettings.thresholds.lifesteal && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.rare) {
+      sumGoodRolls += Math.floor(tomeMods.lifesteal / this.tomeSettings.thresholds.lifesteal);
+    }
+    if (tomeMods.multi_mob >= this.tomeSettings.thresholds.multiMob && tomeMods.multi_mob <= this.tomeSettings.spaceThresholds.rare) {
+      sumGoodRolls += Math.floor(tomeMods.multi_mob / this.tomeSettings.thresholds.multiMob);
+    }
+    if (tomeMods.speed >= this.tomeSettings.thresholds.actionSpeed && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary) {
+      sumGoodRolls += Math.floor(tomeMods.speed / this.tomeSettings.thresholds.actionSpeed);
+    }
+    if (tomeMods.skip >= this.tomeSettings.thresholds.multiMob && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary) {
+      sumGoodRolls += Math.floor(tomeMods.multi_mob / this.tomeSettings.thresholds.multiMob);
     }
 
-    // Highlight other modifiers if they meet the requirements
-    if (!hasNegativeRareLegendaryRolls || this.tomeSettings.thresholds.ignoreNegativeRareLegendary) { 
-      if (meetsRareRequirements) {
-        sumGoodRolls += tomeMods.lifesteal > 0 ? Math.floor(tomeMods.lifesteal / this.tomeSettings.thresholds.lifesteal) : 0;
-        sumGoodRolls += tomeMods.multi_mob > 0 ? Math.floor(tomeMods.multi_mob / this.tomeSettings.thresholds.multiMob) : 0;
-      }
-      if (meetsLegendaryRequirements) {
-        sumGoodRolls += tomeMods.speed > 0 ? Math.floor(tomeMods.speed / this.tomeSettings.thresholds.actionSpeed) : 0;
-        sumGoodRolls += tomeMods.skip > 0 ? Math.floor(tomeMods.skip / this.tomeSettings.thresholds.mobSkip) : 0;
-      }
+    return sumGoodRolls >= this.tomeSettings.thresholds.numGoodRolls;
+  }
 
-      if (meetsRewardMultiRequirements) {
-        const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.thresholds.reward * 2;
-        tomeElement.children[3].style.border = `${isDouble ? 'thick' : '2px'} solid`;
-        tomeElement.children[3].style.borderColor = tomeElement.children[3].firstChild.style.color ?? 'gold';
-        
-        sumGoodRolls += Math.floor(tomeMods.reward_multiplier / this.tomeSettings.thresholds.reward);
-      }
-      if (meetsMobDebuffRequirements) {
-        const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.thresholds.mobDebuff * 2;
-        tomeElement.children[4].style.border = `${isDouble ? 'thick' : '2px'} solid`;
-        tomeElement.children[4].style.borderColor = tomeElement.children[4].firstChild.style.color ?? 'white';
-        
-        sumGoodRolls += Math.floor(tomeMods.mob_multiplier / this.tomeSettings.thresholds.mobDebuff);
-      }
-      if (meetsCharacterMultiRequirements) {
-        const isDouble = tomeMods.character_multiplier >= this.tomeSettings.thresholds.character * 2;
-        tomeElement.children[5].style.border = `${isDouble ? 'thick' : '2px'} solid`;
-        tomeElement.children[5].style.borderColor = tomeElement.children[5].firstChild.style.color ?? 'white';
+  checkTomeWBMeetsThresholds(tomeMods, tomeElement) {
+    /**
+    * Returns true if given tomes meets thresholds accored to the stored tome settings for world boss
+    * Also highlight the tomeElement if threshold is met 
+    */ 
+    let sumRolls = 0;
 
-        sumGoodRolls += Math.floor(tomeMods.character_multiplier / this.tomeSettings.thresholds.character);
-      }
-    }
-
-    if (sumGoodRolls >= this.tomeSettings.thresholds.numGoodRolls) {
-      tomeFailsRequirements = false;
+    if (tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv && 
+      tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.wb
+    ) {
+      const isDoubleElemental = tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv * 2;
+      sumRolls += Math.floor(tomeMods.elemental_conversion / this.tomeSettings.thresholds.elementalConv);
+      tomeElement.children[11].style.border = `${isDoubleElemental ? 'thick' : '1px'} solid`;
+      tomeElement.children[11].style.borderColor = 'forestgreen';
     } 
-    return !tomeFailsRequirements;
+
+    if (tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb && 
+      tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.wb
+    ) {
+      const isDoubleCharacter = tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb * 2;
+      sumRolls += Math.floor(tomeMods.character_multiplier / this.tomeSettings.thresholds.characterWb);
+      tomeElement.children[5].style.border = `${isDoubleCharacter ? 'thick' : '1px'} solid`;
+      tomeElement.children[5].style.borderColor = 'forestgreen';
+    }
+
+    return sumRolls >= this.tomeSettings.thresholds.numGoodRollsWb;
   }
 
   async handleWbChestOpening(mutation) {
