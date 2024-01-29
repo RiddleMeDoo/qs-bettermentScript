@@ -13,7 +13,7 @@
 -   Adds an end time to all applicable quests, both personal and village
 -   Adds the possible min and max ratio of stat quests
 -   Adds a ratio to all personal quests that don't display one
--   Adds a border around the village quest reward when it rewards a strength point, and the activation threshold can be adjusted in the village settings page
+-   Adds a border around the village quest rewards when it reaches certain thresholds, adjusted in the village settings
 -   Adds an end time to catacombs
 -   Displays gold/hr and emblem/hr when hovering over a selected catacomb's total gold and emblems respectively.
 -   Adds coloured borders on tomes with boosts that reach a threshold, which can be adjusted on the tome store page.
