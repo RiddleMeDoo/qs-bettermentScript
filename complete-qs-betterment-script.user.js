@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.7.0
+// @version      1.7.1
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -737,14 +737,14 @@ class Script {
     if (tomeMods.lifesteal >= this.tomeSettings.thresholds.lifesteal && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.rare) {
       sumGoodRolls += Math.floor(tomeMods.lifesteal / this.tomeSettings.thresholds.lifesteal);
     }
-    if (tomeMods.multi_mob >= this.tomeSettings.thresholds.multiMob && tomeMods.multi_mob <= this.tomeSettings.spaceThresholds.rare) {
+    if (tomeMods.multi_mob >= this.tomeSettings.thresholds.multiMob && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.rare) {
       sumGoodRolls += Math.floor(tomeMods.multi_mob / this.tomeSettings.thresholds.multiMob);
     }
     if (tomeMods.speed >= this.tomeSettings.thresholds.actionSpeed && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary) {
       sumGoodRolls += Math.floor(tomeMods.speed / this.tomeSettings.thresholds.actionSpeed);
     }
-    if (tomeMods.skip >= this.tomeSettings.thresholds.multiMob && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary) {
-      sumGoodRolls += Math.floor(tomeMods.multi_mob / this.tomeSettings.thresholds.multiMob);
+    if (tomeMods.skip >= this.tomeSettings.thresholds.mobSkip && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary) {
+      sumGoodRolls += Math.floor(tomeMods.skip / this.tomeSettings.thresholds.mobSkip);
     }
 
     return sumGoodRolls >= this.tomeSettings.thresholds.numGoodRolls;
