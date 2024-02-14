@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.7.1
+// @version      1.7.2
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @include      *queslar.com*
@@ -584,6 +584,9 @@ class Script {
     }
     // Put an id on the first tome of the store to mark it as "processed"
     tomeElements[0].id = 'highlight';
+    // Get the refresh button for disabling it
+    const refreshButton = $('app-catacomb-tome-store > div > div > div.my-auto > div > button')[0]; 
+    refreshButton.style.touchAction = 'manipulation';  // Disable double tap zoom for mobile when tapping the button
 
     // For each tome (loop by index), check if tome has good modifiers.
     for (let i = 0; i < tomes.length; i++) {
@@ -624,6 +627,17 @@ class Script {
            child.style.opacity = "0.4";
         });
       } else {
+        // Briefly disable the refresh button
+        refreshButton.disabled = true;
+        refreshButton.className = 'mat-focus-indicator mat-stroked-button mat-button-base';
+        document.body.style.overflow = 'hidden';  // Prevent spacebar from scrolling down
+        setTimeout((button) => {
+          button.disabled = false;
+          button.className = 'mat-focus-indicator mat-raised-button mat-button-base';
+          button.focus({preventScroll: true});
+          document.body.style.overflow = 'scroll';
+        }, 1000, refreshButton);
+
         if (highlightIncome) {
           tomeElement.parentElement.style.boxShadow = '0 0 30px 15px #48abe0';
         } else {
@@ -996,22 +1010,40 @@ class Script {
 
 
     } else if(isVillage && tableBody.children[0]) {
+      const refreshButton = $('app-village-quests > div > div > div.mt-3 > button')[0];
+      refreshButton.style.touchAction = 'manipulation';  // Disable double tap zoom for mobile when tapping the button
+
       //Get village quests
       for(let i = 0; i < tableBody.children.length; i++) {
         let row = tableBody.children[i];
 
         const objectiveText = row.children[1].innerText.split(' ');
         let timeElem = null;
+        let meetsHighlightReq = false;
+
         if(objectiveText[1] === 'actions') {
           //Add border if there's a str point reward or it meets the minResAction threshold
           const rewardText = row.children[2].innerText.split(' ');
           const reward = rewardText[1];
           if(reward === 'strength' && parseNumber(objectiveText[0]) <= this.villageSettings.strActions) {
-            row.children[2].style.border = 'inset';
+            meetsHighlightReq = true;
           } else if (parseNumber(rewardText[0]) / parseNumber(objectiveText[0]) >= this.villageSettings.resActionRatio) {  
             // res reward ratio meets threshold setting
-            row.children[2].style.border = 'inset';
+            meetsHighlightReq = true;
           }
+          if (meetsHighlightReq) {
+            row.children[2].style.border = 'inset';
+            refreshButton.disabled = true;
+            refreshButton.className = 'mat-focus-indicator mr-2 mat-stroked-button mat-button-base';
+            document.body.style.overflow = 'hidden';  // Prevent spacebar from scrolling down
+            setTimeout((button) => {
+              button.disabled = false;
+              button.className = 'mat-focus-indicator mr-2 mat-raised-button mat-button-base';
+              button.focus({preventScroll: true});
+              document.body.style.overflow = 'scroll';
+            }, 1000, refreshButton);
+          }
+
           //Insert end time
           const objective = parseNumber(objectiveText[0]);
           timeElem = this.getTimeElem(objective, row.firstChild.className, true);
