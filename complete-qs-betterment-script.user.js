@@ -831,7 +831,7 @@ class Script {
             // Description has to be max depth 31+
             continue;
           } else if (dropType === 'item' && parseNumber(text[1]) < 31) {
-            // Fighter item must be a rare drop
+            // Fighter item must be depth 31+
             continue;
           }
           // Highlight the element
@@ -1412,7 +1412,7 @@ function parseNumber(num) {
 
 function addInvisibleScrollDiv() {
   /**
-   * Add an invisible div to stop the window from scrolling
+   * Add an invisible div to stop the window from scrolling via the spacebar
    */
   const invisiDiv = document.createElement('div');
   invisiDiv.id = 'stopScrollDiv';
