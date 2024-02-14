@@ -37,6 +37,9 @@ class Script {
     //observer setup
     this.initObservers();
     this.currentPath = window.location.hash.split('/').splice(2).join();
+
+    // Other setup
+    addInvisibleScrollDiv();
   }
 
   loadDataFromStorage() {
@@ -630,12 +633,11 @@ class Script {
         // Briefly disable the refresh button
         refreshButton.disabled = true;
         refreshButton.className = 'mat-focus-indicator mat-stroked-button mat-button-base';
-        document.body.style.overflow = 'hidden';  // Prevent spacebar from scrolling down
+        document.querySelector('#stopScrollDiv').focus();  // Prevent spacebar from scrolling down
         setTimeout((button) => {
           button.disabled = false;
           button.className = 'mat-focus-indicator mat-raised-button mat-button-base';
           button.focus({preventScroll: true});
-          document.body.style.overflow = 'scroll';
         }, 1000, refreshButton);
 
         if (highlightIncome) {
@@ -1035,13 +1037,12 @@ class Script {
             row.children[2].style.border = 'inset';
             refreshButton.disabled = true;
             refreshButton.className = 'mat-focus-indicator mr-2 mat-stroked-button mat-button-base';
-            document.body.style.overflow = 'hidden';  // Prevent spacebar from scrolling down
+            document.querySelector('#stopScrollDiv').focus();  // Prevent spacebar from scrolling down
             setTimeout((button) => {
               button.disabled = false;
               button.className = 'mat-focus-indicator mr-2 mat-raised-button mat-button-base';
               button.focus({preventScroll: true});
-              document.body.style.overflow = 'scroll';
-            }, 1000, refreshButton);
+            }, 600, refreshButton);
           }
 
           //Insert end time
@@ -1407,6 +1408,23 @@ function parseNumber(num) {
       return shortenedNum * multiplier;
     }
   }
+}
+
+function addInvisibleScrollDiv() {
+  /**
+   * Add an invisible div to stop the window from scrolling
+   */
+  const invisiDiv = document.createElement('div');
+  invisiDiv.id = 'stopScrollDiv';
+  invisiDiv.style.display = 'none';
+  invisiDiv.style.overflow = 'scroll';
+  invisiDiv.style.width = '0px';
+  invisiDiv.style.height = '0px';
+  $(invisiDiv).keypress(function(e) {
+    if (e.which == 32)
+        return false;
+  });
+  document.body.appendChild(invisiDiv);
 }
 
 // ----------------------------------------------------------------------------
