@@ -1042,7 +1042,7 @@ class Script {
               button.disabled = false;
               button.className = 'mat-focus-indicator mr-2 mat-raised-button mat-button-base';
               button.focus({preventScroll: true});
-            }, 600, refreshButton);
+            }, 800, refreshButton);
           }
 
           //Insert end time
@@ -1414,16 +1414,12 @@ function addInvisibleScrollDiv() {
   /**
    * Add an invisible div to stop the window from scrolling via the spacebar
    */
-  const invisiDiv = document.createElement('div');
+  const invisiDiv = document.createElement('button');
   invisiDiv.id = 'stopScrollDiv';
-  invisiDiv.style.display = 'none';
-  invisiDiv.style.overflow = 'scroll';
+  invisiDiv.onclick = () => {};
   invisiDiv.style.width = '0px';
   invisiDiv.style.height = '0px';
-  $(invisiDiv).keypress(function(e) {
-    if (e.which == 32)
-        return false;
-  });
+  invisiDiv.style.opacity = 0;
   document.body.appendChild(invisiDiv);
 }
 
