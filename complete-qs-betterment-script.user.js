@@ -4,7 +4,7 @@
 // @version      1.7.2
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
-// @include      *queslar.com*
+// @match        *://*.queslar.com/*
 // @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
 // @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/tomeSettingsMenu.html
 // @grant        GM_getResourceText
@@ -551,7 +551,7 @@ class Script {
 
       // Highlight start button if tomes are equipped
       const goldPerKillEle = mutation.target.parentElement.parentElement?.previousSibling?.children?.[9]?.firstElementChild;
-      if (!goldPerKillEle) return;  // Early return if element cannot be found, since mutations can come from anything
+      if (!goldPerKillEle) return; // Early return if element cannot be found, since mutations can come from anything
       const baseGoldPerKill = parseNumber(goldPerKillEle.innerText);
       const startCataButton = mobOverviewEle.nextSibling.firstChild;
       if (this.catacomb.tomesAreEquipped && baseGoldPerKill < this.tomeSettings.goldKillTomesEquippedAmount) {
@@ -589,7 +589,7 @@ class Script {
     tomeElements[0].id = 'highlight';
     // Get the refresh button for disabling it
     const refreshButton = $('app-catacomb-tome-store > div > div > div.my-auto > div > button')[0]; 
-    refreshButton.style.touchAction = 'manipulation';  // Disable double tap zoom for mobile when tapping the button
+    refreshButton.style.touchAction = 'manipulation'; // Disable double tap zoom for mobile when tapping the button
 
     // For each tome (loop by index), check if tome has good modifiers.
     for (let i = 0; i < tomes.length; i++) {
@@ -606,11 +606,11 @@ class Script {
         displayEle.className = 'd-flex justify-content-between ng-star-inserted';
         tomeElement.appendChild(displayEle, tomeElement.nextSibling.firstChild);
 
-        if (this.checkTomeIncomePower(tomeMods, displayEle)) {  // Displays income power as well
+        if (this.checkTomeIncomePower(tomeMods, displayEle)) { // Displays income power as well
           shouldFadeTome = false;
           highlightIncome = true;
         } 
-        if (this.checkTomeWBPower(tomeMods, displayEle)) {  // Displays wb power as well
+        if (this.checkTomeWBPower(tomeMods, displayEle)) { // Displays wb power as well
           shouldFadeTome = false;
         }
       } else {
@@ -633,12 +633,12 @@ class Script {
         // Briefly disable the refresh button
         refreshButton.disabled = true;
         refreshButton.className = 'mat-focus-indicator mat-stroked-button mat-button-base';
-        document.querySelector('#stopScrollDiv').focus();  // Prevent spacebar from scrolling down
+        document.querySelector('#stopScrollDiv').focus(); // Prevent spacebar from scrolling down
         setTimeout((button) => {
           button.disabled = false;
           button.className = 'mat-focus-indicator mat-raised-button mat-button-base';
           button.focus({preventScroll: true});
-        }, 1000, refreshButton);
+        }, 2000, refreshButton);
 
         if (highlightIncome) {
           tomeElement.parentElement.style.boxShadow = '0 0 30px 15px #48abe0';
@@ -1013,7 +1013,7 @@ class Script {
 
     } else if(isVillage && tableBody.children[0]) {
       const refreshButton = $('app-village-quests > div > div > div.mt-3 > button')[0];
-      refreshButton.style.touchAction = 'manipulation';  // Disable double tap zoom for mobile when tapping the button
+      refreshButton.style.touchAction = 'manipulation'; // Disable double tap zoom for mobile when tapping the button
 
       //Get village quests
       for(let i = 0; i < tableBody.children.length; i++) {
@@ -1037,12 +1037,12 @@ class Script {
             row.children[2].style.border = 'inset';
             refreshButton.disabled = true;
             refreshButton.className = 'mat-focus-indicator mr-2 mat-stroked-button mat-button-base';
-            document.querySelector('#stopScrollDiv').focus();  // Prevent spacebar from scrolling down
+            document.querySelector('#stopScrollDiv').focus(); // Prevent spacebar from scrolling down
             setTimeout((button) => {
               button.disabled = false;
               button.className = 'mat-focus-indicator mr-2 mat-raised-button mat-button-base';
               button.focus({preventScroll: true});
-            }, 800, refreshButton);
+            }, 1200, refreshButton);
           }
 
           //Insert end time
@@ -1243,7 +1243,7 @@ class Script {
     }
 
     // Set up buttons
-    openTomeSettingsbutton.onclick = () => {  // Toggle open and close menu
+    openTomeSettingsbutton.onclick = () => { // Toggle open and close menu
       const container = document.querySelector('#tomeSettingsContainer');
       if (container.style.display === 'none') {
         container.style.display = 'inline-block';
@@ -1389,7 +1389,7 @@ function parseNumber(num) {
   **/
   // First strip any commas
   const resultNumStr = num.replace(/,/g, '');
-  if (!isNaN(Number(resultNumStr))) {  // This can also convert exponential notation
+  if (!isNaN(Number(resultNumStr))) { // This can also convert exponential notation
     return Number(resultNumStr);
   }
 
