@@ -633,7 +633,7 @@ class Script {
         // Briefly disable the refresh button
         refreshButton.disabled = true;
         refreshButton.className = 'mat-focus-indicator mat-stroked-button mat-button-base';
-        document.querySelector('#stopScrollDiv').focus(); // Prevent spacebar from scrolling down
+        document.querySelector('#stopScrollDiv').focus({preventScroll: true}); // Prevent spacebar from scrolling down
         setTimeout((button) => {
           button.disabled = false;
           button.className = 'mat-focus-indicator mat-raised-button mat-button-base';
@@ -1037,7 +1037,7 @@ class Script {
             row.children[2].style.border = 'inset';
             refreshButton.disabled = true;
             refreshButton.className = 'mat-focus-indicator mr-2 mat-stroked-button mat-button-base';
-            document.querySelector('#stopScrollDiv').focus(); // Prevent spacebar from scrolling down
+            document.querySelector('#stopScrollDiv').focus({preventScroll: true}); // Prevent spacebar from scrolling down
             setTimeout((button) => {
               button.disabled = false;
               button.className = 'mat-focus-indicator mr-2 mat-raised-button mat-button-base';
