@@ -98,12 +98,12 @@ class Script {
   }
 
   async getGameData() { //ULTIMATE POWER
-    let tries = 30;
-    //Get a reference to *all* the data the game is using to run
-    this.gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
+    let tries = 10;
+    //Get a reference to *all* the data the game is using, courtesy of Blah's exposed global object
+    this.gameData = playerGeneralService;
     while(this.gameData === undefined && tries > 0) { //Power comes with a price; wait for it to load
       await new Promise(resolve => setTimeout(resolve, 500))
-      this.gameData = getAllAngularRootElements()[0].children[2]['__ngContext__'][30]?.playerGeneralService;
+      this.gameData = playerGeneralService;
       tries--;
     }
 
