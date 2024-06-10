@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.7.3
+// @version      1.7.4
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @match        *://*.queslar.com/*
 // @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
-// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/tomeSettingsMenu.html
+// @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/1_7_4-tome_fixes/tomeSettingsMenu.html
 // @grant        GM_getResourceText
 // ==/UserScript==
 
@@ -70,31 +70,8 @@ class Script {
         goldKillTomesEquippedAmount: 0,
       };
     }
-    // ! More migration from v1.7.0, delete after 2025-01-01
-    this.tomeSettings.useWeightSettings = this.tomeSettings.useWeightSettings ?? false;
-    this.tomeSettings.weights = this.tomeSettings.weights ?? {};
-    this.tomeSettings.thresholds = this.tomeSettings.thresholds ?? {
-      reward: this.tomeSettings.highlightReward ?? 99900,
-      mobDebuff: this.tomeSettings.highlightMob ?? 99900,
-      character: this.tomeSettings.highlightCharacter ?? 99900,
-      characterWb: this.tomeSettings.highlightCharacterWb ?? 99900,
-      elementalConv: this.tomeSettings.highlightElementalConv ?? 99900,
-      multiMob: this.tomeSettings.highlightMultiMob ?? 1,
-      lifesteal: this.tomeSettings.highlightLifesteal ?? 1,
-      actionSpeed: this.tomeSettings.highlightActionSpeed ?? 1,
-      mobSkip: this.tomeSettings.highlightMobSkip ?? 1,
-      numGoodRolls: this.tomeSettings.numGoodRolls ?? 1,
-      numGoodRollsWb: 2,
-    }
-    this.tomeSettings.spaceThresholds = this.tomeSettings.spaceThresholds ?? {
-      reward: this.tomeSettings.spaceLimitReward ?? 6,
-      mobDebuff: this.tomeSettings.spaceLimitMob ?? 6,
-      character: this.tomeSettings.spaceLimitCharacter ?? 6,
-      wb: this.tomeSettings.spaceLimitWb ?? 6,
-      rare: this.tomeSettings.spaceLimitRare ?? 6,
-      legendary: this.tomeSettings.spaceLimitLegendary ?? 6,
-    }
-    this.tomeSettings.hideMods = this.tomeSettings.hideMods ?? {};
+    // ! Migration from 1.7.4, delete after 2025-06-01
+    this.tomeSettings.disableRefreshOnHighlight = this.tomeSettings.disableRefreshOnHighlight ?? true;
   }
 
   async getGameData() { //ULTIMATE POWER
@@ -723,7 +700,9 @@ class Script {
     let sumGoodRolls = 0;
     // Check each important mods: reward, character, mob, lifesteal, multi mob, action speed, mob skip
     // For each mod, if it meets the settings highlight the mod and increment the number of rolls
-    if (tomeMods.reward_multiplier >= this.tomeSettings.thresholds.reward 
+    if (
+      this.tomeSettings.thresholds.reward > 0
+      && tomeMods.reward_multiplier >= this.tomeSettings.thresholds.reward 
       && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.reward
     ) {
       const isDouble = tomeMods.reward_multiplier >= this.tomeSettings.thresholds.reward * 2;
@@ -732,7 +711,9 @@ class Script {
       
       sumGoodRolls += Math.floor(tomeMods.reward_multiplier / this.tomeSettings.thresholds.reward);
     }
-    if (tomeMods.mob_multiplier >= this.tomeSettings.thresholds.mobDebuff 
+    if (
+      this.tomeSettings.thresholds.mobDebuff > 0
+      && tomeMods.mob_multiplier >= this.tomeSettings.thresholds.mobDebuff 
       && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.mobDebuff
     ) {
       const isDouble = tomeMods.mob_multiplier >= this.tomeSettings.thresholds.mobDebuff * 2;
@@ -741,7 +722,9 @@ class Script {
       
       sumGoodRolls += Math.floor(tomeMods.mob_multiplier / this.tomeSettings.thresholds.mobDebuff);
     }
-    if (tomeMods.character_multiplier >= this.tomeSettings.thresholds.character 
+    if (
+      this.tomeSettings.thresholds.character > 0
+      && tomeMods.character_multiplier >= this.tomeSettings.thresholds.character 
       && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.character
     ) {
       const isDouble = tomeMods.character_multiplier >= this.tomeSettings.thresholds.character * 2;
@@ -750,16 +733,32 @@ class Script {
 
       sumGoodRolls += Math.floor(tomeMods.character_multiplier / this.tomeSettings.thresholds.character);
     }
-    if (tomeMods.lifesteal >= this.tomeSettings.thresholds.lifesteal && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.rare) {
+    if (
+      this.tomeSettings.thresholds.lifesteal > 0
+      && tomeMods.lifesteal >= this.tomeSettings.thresholds.lifesteal 
+      && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.rare
+    ) {
       sumGoodRolls += Math.floor(tomeMods.lifesteal / this.tomeSettings.thresholds.lifesteal);
     }
-    if (tomeMods.multi_mob >= this.tomeSettings.thresholds.multiMob && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.rare) {
+    if (
+      this.tomeSettings.thresholds.multiMob > 0
+      && tomeMods.multi_mob >= this.tomeSettings.thresholds.multiMob 
+      && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.rare
+    ) {
       sumGoodRolls += Math.floor(tomeMods.multi_mob / this.tomeSettings.thresholds.multiMob);
     }
-    if (tomeMods.speed >= this.tomeSettings.thresholds.actionSpeed && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary) {
+    if (
+      this.tomeSettings.thresholds.actionSpeed > 0
+      && tomeMods.speed >= this.tomeSettings.thresholds.actionSpeed 
+      && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary
+    ) {
       sumGoodRolls += Math.floor(tomeMods.speed / this.tomeSettings.thresholds.actionSpeed);
     }
-    if (tomeMods.skip >= this.tomeSettings.thresholds.mobSkip && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary) {
+    if (
+      this.tomeSettings.thresholds.mobSkip > 0
+      && tomeMods.skip >= this.tomeSettings.thresholds.mobSkip 
+      && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.legendary
+    ) {
       sumGoodRolls += Math.floor(tomeMods.skip / this.tomeSettings.thresholds.mobSkip);
     }
 
@@ -773,8 +772,10 @@ class Script {
     */ 
     let sumRolls = 0;
 
-    if (tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv && 
-      tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.wb
+    if (
+      this.tomeSettings.thresholds.elementalConv > 0
+      && tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv
+      && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.wb
     ) {
       const isDoubleElemental = tomeMods.elemental_conversion >= this.tomeSettings.thresholds.elementalConv * 2;
       sumRolls += Math.floor(tomeMods.elemental_conversion / this.tomeSettings.thresholds.elementalConv);
@@ -782,8 +783,10 @@ class Script {
       tomeElement.children[11].style.borderColor = 'forestgreen';
     } 
 
-    if (tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb && 
-      tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.wb
+    if (
+      this.tomeSettings.thresholds.characterWb > 0
+      && tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb 
+      && tomeMods.space_requirement <= this.tomeSettings.spaceThresholds.wb
     ) {
       const isDoubleCharacter = tomeMods.character_multiplier >= this.tomeSettings.thresholds.characterWb * 2;
       sumRolls += Math.floor(tomeMods.character_multiplier / this.tomeSettings.thresholds.characterWb);
@@ -1210,7 +1213,6 @@ class Script {
     settingsContainer.querySelector('#rareSpaceSetting').value = this.tomeSettings.spaceThresholds.rare ?? 9;
     settingsContainer.querySelector('#legendarySpaceSetting').value = this.tomeSettings.spaceThresholds.legendary ?? 9;
     settingsContainer.querySelector('#numGoodRolls').value = this.tomeSettings.thresholds.numGoodRolls ?? 1;
-    settingsContainer.querySelector('#goldPerKillForTomesEquipped').value = this.tomeSettings.goldKillTomesEquippedAmount ?? 0;
     settingsContainer.querySelector('#numGoodRollsWb').value = this.tomeSettings.thresholds.numGoodRollsWb ?? 2;
 
     settingsContainer.querySelector('#actionSpeedWeight').value = this.tomeSettings.weights.actionSpeed ?? 0;
@@ -1236,6 +1238,9 @@ class Script {
     settingsContainer.querySelector('#hideRangedResistance').checked = this.tomeSettings.hideMods.rangedResistance ?? false;
     settingsContainer.querySelector('#hideElementalConversion').checked = this.tomeSettings.hideMods.elementalConversion ?? false;
     settingsContainer.querySelector('#hideFortifyReduction').checked = this.tomeSettings.hideMods.fortifyReduction ?? false;
+
+    settingsContainer.querySelector('#goldPerKillForTomesEquipped').value = this.tomeSettings.goldKillTomesEquippedAmount ?? 0;
+    settingsContainer.querySelector('#disableRefreshOnHighlight').checked = this.tomeSettings.disableRefreshOnHighlight ?? true;
     if (this.tomeSettings.useWeightSettings) {
       settingsContainer.querySelector('#toggleWeightSettings').className = 'mat-focus-indicator mat-stroked-button mat-button-base';
     } else {
@@ -1298,7 +1303,6 @@ class Script {
           rare: container.querySelector('#rareSpaceSetting').valueAsNumber,
           legendary: container.querySelector('#legendarySpaceSetting').valueAsNumber,
         },
-        goldKillTomesEquippedAmount: container.querySelector('#goldPerKillForTomesEquipped').valueAsNumber,
         weights: {
           actionSpeed: container.querySelector('#actionSpeedWeight').valueAsNumber,
           mobSkip: container.querySelector('#mobSkipWeight').valueAsNumber,
@@ -1325,6 +1329,8 @@ class Script {
           elementalConversion: settingsContainer.querySelector('#hideElementalConversion').checked,
           fortifyReduction: settingsContainer.querySelector('#hideFortifyReduction').checked,
         },
+        goldKillTomesEquippedAmount: container.querySelector('#goldPerKillForTomesEquipped').valueAsNumber,
+        disableRefreshOnHighlight: container.querySelector('#disableRefreshOnHighlight').checked,
       };
       // Sanitize inputs
       for (const type in tomeSettings) {
