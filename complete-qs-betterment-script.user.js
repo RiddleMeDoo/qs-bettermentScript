@@ -607,16 +607,18 @@ class Script {
            child.style.opacity = "0.4";
         });
       } else {
-        // Briefly disable the refresh button
-        refreshButton.disabled = true;
-        refreshButton.className = 'mat-focus-indicator mat-stroked-button mat-button-base';
-        document.querySelector('#stopScrollDiv').focus({preventScroll: true}); // Prevent spacebar from scrolling down
-        setTimeout((button) => {
-          button.disabled = false;
-          button.className = 'mat-focus-indicator mat-raised-button mat-button-base';
-          button.focus({preventScroll: true});
-        }, 2000, refreshButton);
-
+        if (this.tomeSettings.disableRefreshOnHighlight) {
+          // Briefly disable the refresh button
+          refreshButton.disabled = true;
+          refreshButton.className = 'mat-focus-indicator mat-stroked-button mat-button-base';
+          document.querySelector('#stopScrollDiv').focus({preventScroll: true}); // Prevent spacebar from scrolling down
+          setTimeout((button) => {
+            button.disabled = false;
+            button.className = 'mat-focus-indicator mat-raised-button mat-button-base';
+            button.focus({preventScroll: true});
+          }, 1600, refreshButton);
+        }
+          
         if (highlightIncome) {
           tomeElement.parentElement.style.boxShadow = '0 0 30px 15px #48abe0';
         } else {
@@ -1038,14 +1040,16 @@ class Script {
           }
           if (meetsHighlightReq) {
             row.children[2].style.border = 'inset';
-            refreshButton.disabled = true;
-            refreshButton.className = 'mat-focus-indicator mr-2 mat-stroked-button mat-button-base';
-            document.querySelector('#stopScrollDiv').focus({preventScroll: true}); // Prevent spacebar from scrolling down
-            setTimeout((button) => {
-              button.disabled = false;
-              button.className = 'mat-focus-indicator mr-2 mat-raised-button mat-button-base';
-              button.focus({preventScroll: true});
-            }, 1200, refreshButton);
+            if (this.tomeSettings.disableRefreshOnHighlight) {
+              refreshButton.disabled = true;
+              refreshButton.className = 'mat-focus-indicator mr-2 mat-stroked-button mat-button-base';
+              document.querySelector('#stopScrollDiv').focus({preventScroll: true}); // Prevent spacebar from scrolling down
+              setTimeout((button) => {
+                button.disabled = false;
+                button.className = 'mat-focus-indicator mr-2 mat-raised-button mat-button-base';
+                button.focus({preventScroll: true});
+              }, 1200, refreshButton);
+            }
           }
 
           //Insert end time
