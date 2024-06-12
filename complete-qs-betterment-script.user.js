@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.7.4
+// @version      1.7.5
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @match        *://*.queslar.com/*
@@ -52,6 +52,7 @@ class Script {
       // Attempt migration from old settings
       this.villageSettings = JSON.parse(localStorage.getItem('QuesBS_villageSettings'));
       localStorage.setItem(`${this.playerId}:QuesBS_villageSettings`, JSON.stringify(this.villageSettings));
+      localStorage.removeItem('QuesBS_villageSettings');
     } else if(!this.villageSettings) {
       this.villageSettings = {
         strActions: 30000,
@@ -65,12 +66,62 @@ class Script {
       // Attempt migration from old settings
       this.tomeSettings = JSON.parse(localStorage.getItem('QuesBS_tomeSettings'));
       localStorage.setItem(`${this.playerId}:QuesBS_tomeSettings`, JSON.stringify(this.tomeSettings));
+      localStorage.removeItem('QuesBS_tomeSettings');
     } else if(!this.tomeSettings) {
       this.tomeSettings = {
         goldKillTomesEquippedAmount: 0,
+        useWeightSettings: false,
+        weights: {},
+        thresholds: {
+          reward: 999900,
+          mobDebuff: 999900,
+          character: 999900,
+          characterWb: 999900,
+          elementalConv: 999900,
+          multiMob: 1,
+          lifesteal: 1,
+          actionSpeed: 1,
+          mobSkip: 1,
+          numGoodRolls: 1,
+          numGoodRollsWb: 2,
+        },
+        spaceThresholds: {
+          reward: 6,
+          mobDebuff: 6,
+          character: 6,
+          wb: 6,
+          rare: 6,
+          legendary: 6,
+        },
+        hideMods: {},
+        disableRefreshOnHighlight: true,
       };
     }
-    // ! Migration from 1.7.4, delete after 2025-06-01
+    // Legacy code updates, keep for now until bugs do not occur when it gets removed
+    this.tomeSettings.useWeightSettings = this.tomeSettings.useWeightSettings ?? false;
+    this.tomeSettings.weights = this.tomeSettings.weights ?? {};
+    this.tomeSettings.thresholds = this.tomeSettings.thresholds ?? {
+      reward: this.tomeSettings.highlightReward ?? 99900,
+      mobDebuff: this.tomeSettings.highlightMob ?? 99900,
+      character: this.tomeSettings.highlightCharacter ?? 99900,
+      characterWb: this.tomeSettings.highlightCharacterWb ?? 99900,
+      elementalConv: this.tomeSettings.highlightElementalConv ?? 99900,
+      multiMob: this.tomeSettings.highlightMultiMob ?? 1,
+      lifesteal: this.tomeSettings.highlightLifesteal ?? 1,
+      actionSpeed: this.tomeSettings.highlightActionSpeed ?? 1,
+      mobSkip: this.tomeSettings.highlightMobSkip ?? 1,
+      numGoodRolls: this.tomeSettings.numGoodRolls ?? 1,
+      numGoodRollsWb: 2,
+    }
+    this.tomeSettings.spaceThresholds = this.tomeSettings.spaceThresholds ?? {
+      reward: this.tomeSettings.spaceLimitReward ?? 6,
+      mobDebuff: this.tomeSettings.spaceLimitMob ?? 6,
+      character: this.tomeSettings.spaceLimitCharacter ?? 6,
+      wb: this.tomeSettings.spaceLimitWb ?? 6,
+      rare: this.tomeSettings.spaceLimitRare ?? 6,
+      legendary: this.tomeSettings.spaceLimitLegendary ?? 6,
+    }
+    this.tomeSettings.hideMods = this.tomeSettings.hideMods ?? {};
     this.tomeSettings.disableRefreshOnHighlight = this.tomeSettings.disableRefreshOnHighlight ?? true;
   }
 
@@ -1201,15 +1252,16 @@ class Script {
     }
 
     // Fill in input values
-    settingsContainer.querySelector('#rewardHighlightSetting').value = (this.tomeSettings.thresholds.reward / 100).toFixed(2);
-    settingsContainer.querySelector('#mobHighlightSetting').value = (this.tomeSettings.thresholds.mobDebuff / 100).toFixed(2);
-    settingsContainer.querySelector('#characterHighlightSetting').value = (this.tomeSettings.thresholds.character / 100).toFixed(2);
-    settingsContainer.querySelector('#characterWbHighlightSetting').value = (this.tomeSettings.thresholds.characterWb / 100).toFixed(2);
-    settingsContainer.querySelector('#elementalConvHighlightSetting').value = (this.tomeSettings.thresholds.elementalConv / 100).toFixed(2);
-    settingsContainer.querySelector('#multiMobHighlightSetting').value = (this.tomeSettings.thresholds.multiMob / 100).toFixed(2);
-    settingsContainer.querySelector('#lifestealHighlightSetting').value = (this.tomeSettings.thresholds.lifesteal / 100).toFixed(2);
-    settingsContainer.querySelector('#actionSpeedHighlightSetting').value = (this.tomeSettings.thresholds.actionSpeed / 100).toFixed(2);
-    settingsContainer.querySelector('#mobSkipHighlightSetting').value = (this.tomeSettings.thresholds.mobSkip / 100).toFixed(2);
+    const d = 99900; // Default value
+    settingsContainer.querySelector('#rewardHighlightSetting').value = (this.tomeSettings.thresholds.reward ?? d / 100).toFixed(2);
+    settingsContainer.querySelector('#mobHighlightSetting').value = (this.tomeSettings.thresholds.mobDebuff ?? d / 100).toFixed(2);
+    settingsContainer.querySelector('#characterHighlightSetting').value = (this.tomeSettings.thresholds.character ?? d / 100).toFixed(2);
+    settingsContainer.querySelector('#characterWbHighlightSetting').value = (this.tomeSettings.thresholds.characterWb ?? d / 100).toFixed(2);
+    settingsContainer.querySelector('#elementalConvHighlightSetting').value = (this.tomeSettings.thresholds.elementalConv ?? d / 100).toFixed(2);
+    settingsContainer.querySelector('#multiMobHighlightSetting').value = (this.tomeSettings.thresholds.multiMob ?? d / 100).toFixed(2);
+    settingsContainer.querySelector('#lifestealHighlightSetting').value = (this.tomeSettings.thresholds.lifesteal ?? d / 100).toFixed(2);
+    settingsContainer.querySelector('#actionSpeedHighlightSetting').value = (this.tomeSettings.thresholds.actionSpeed ?? d / 100).toFixed(2);
+    settingsContainer.querySelector('#mobSkipHighlightSetting').value = (this.tomeSettings.thresholds.mobSkip ?? d / 100).toFixed(2);
     settingsContainer.querySelector('#rewardSpaceSetting').value = this.tomeSettings.spaceThresholds.reward ?? 6;
     settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceThresholds.mobDebuff ?? 6;
     settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceThresholds.character ?? 6;
