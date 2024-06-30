@@ -46,7 +46,7 @@ class Script {
     /**
      * Load data stored in the localStorage of the website. Each player stores their own settings.
      */
-    // ! BANDAID migration, please remove non-id settings in storage after 2024-05-01
+    // ! BANDAID migration, please remove non-id settings in storage after 2024-12-01
     this.villageSettings = JSON.parse(localStorage.getItem(`${this.playerId}:QuesBS_villageSettings`));
     if (!this.villageSettings && localStorage.getItem('QuesBS_villageSettings')) {
       // Attempt migration from old settings
@@ -1253,15 +1253,15 @@ class Script {
 
     // Fill in input values
     const d = 99900; // Default value
-    settingsContainer.querySelector('#rewardHighlightSetting').value = (this.tomeSettings.thresholds.reward ?? d / 100).toFixed(2);
-    settingsContainer.querySelector('#mobHighlightSetting').value = (this.tomeSettings.thresholds.mobDebuff ?? d / 100).toFixed(2);
-    settingsContainer.querySelector('#characterHighlightSetting').value = (this.tomeSettings.thresholds.character ?? d / 100).toFixed(2);
-    settingsContainer.querySelector('#characterWbHighlightSetting').value = (this.tomeSettings.thresholds.characterWb ?? d / 100).toFixed(2);
-    settingsContainer.querySelector('#elementalConvHighlightSetting').value = (this.tomeSettings.thresholds.elementalConv ?? d / 100).toFixed(2);
-    settingsContainer.querySelector('#multiMobHighlightSetting').value = (this.tomeSettings.thresholds.multiMob ?? d / 100).toFixed(2);
-    settingsContainer.querySelector('#lifestealHighlightSetting').value = (this.tomeSettings.thresholds.lifesteal ?? d / 100).toFixed(2);
-    settingsContainer.querySelector('#actionSpeedHighlightSetting').value = (this.tomeSettings.thresholds.actionSpeed ?? d / 100).toFixed(2);
-    settingsContainer.querySelector('#mobSkipHighlightSetting').value = (this.tomeSettings.thresholds.mobSkip ?? d / 100).toFixed(2);
+    settingsContainer.querySelector('#rewardHighlightSetting').value = ((this.tomeSettings.thresholds.reward ?? d) / 100).toFixed(2);
+    settingsContainer.querySelector('#mobHighlightSetting').value = ((this.tomeSettings.thresholds.mobDebuff ?? d) / 100).toFixed(2);
+    settingsContainer.querySelector('#characterHighlightSetting').value = ((this.tomeSettings.thresholds.character ?? d) / 100).toFixed(2);
+    settingsContainer.querySelector('#characterWbHighlightSetting').value = ((this.tomeSettings.thresholds.characterWb ?? d) / 100).toFixed(2);
+    settingsContainer.querySelector('#elementalConvHighlightSetting').value = ((this.tomeSettings.thresholds.elementalConv ?? d) / 100).toFixed(2);
+    settingsContainer.querySelector('#multiMobHighlightSetting').value = ((this.tomeSettings.thresholds.multiMob ?? d) / 100).toFixed(2);
+    settingsContainer.querySelector('#lifestealHighlightSetting').value = ((this.tomeSettings.thresholds.lifesteal ?? d) / 100).toFixed(2);
+    settingsContainer.querySelector('#actionSpeedHighlightSetting').value = ((this.tomeSettings.thresholds.actionSpeed ?? d) / 100).toFixed(2);
+    settingsContainer.querySelector('#mobSkipHighlightSetting').value = ((this.tomeSettings.thresholds.mobSkip ?? d) / 100).toFixed(2);
     settingsContainer.querySelector('#rewardSpaceSetting').value = this.tomeSettings.spaceThresholds.reward ?? 6;
     settingsContainer.querySelector('#mobSpaceSetting').value = this.tomeSettings.spaceThresholds.mobDebuff ?? 6;
     settingsContainer.querySelector('#characterSpaceSetting').value = this.tomeSettings.spaceThresholds.character ?? 6;
