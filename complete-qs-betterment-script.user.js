@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.7.5
+// @version      1.7.6
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @match        *://*.queslar.com/*
@@ -1194,6 +1194,8 @@ class Script {
     taxObjectiveSetting.children[1].firstChild.value = this.villageSettings.taxObjectivePercent ?? 0;
     // Insert
     const saveButton = questSettings.firstChild.children[2];
+    saveButton.disabled = false;
+    saveButton.className = 'mat-focus-indicator mat-raised-button mat-button-base';  // Make it look enabled in case it's disabled
     questSettings.firstChild.insertBefore(resActionSetting, saveButton);
     questSettings.firstChild.insertBefore(taxObjectiveSetting, saveButton);
 
