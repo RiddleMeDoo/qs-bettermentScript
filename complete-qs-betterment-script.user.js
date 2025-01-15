@@ -8,6 +8,8 @@
 // @require      https://code.jquery.com/jquery-3.6.3.slim.min.js
 // @resource     settingsMenu https://raw.githubusercontent.com/RiddleMeDoo/qs-bettermentScript/master/tomeSettingsMenu.html
 // @grant        GM_getResourceText
+// @downloadURL  https://update.greasyfork.org/scripts/435820/Queslar%20Betterment%20Script.user.js
+// @updateURL    https://update.greasyfork.org/scripts/435820/Queslar%20Betterment%20Script.meta.js
 // ==/UserScript==
 
 class Script {
@@ -432,6 +434,8 @@ class Script {
       }
       // Insert stat ratios on the pets page
       await this.insertPlayerStatRatios(target[0]);
+    } else if (path[path.length - 1].toLowerCase() === 'gems' && path[0].toLowerCase() === 'inventory') {
+      await this.insertFuseFrenzyButton();
     }
   }
 
@@ -1220,7 +1224,7 @@ class Script {
     }
     settingsOverview.appendChild(questSettings);
   }
-  
+
   async modifyTomeStorePage() {
     /**
      * Inserts a custom popup menu for tome settings
@@ -1407,6 +1411,51 @@ class Script {
       this.handleCatacombTomeStore({target: target[0]});
     }
   }
+
+  async insertFuseFrenzyButton() {
+    // Add a fuse button to the gem page
+    // Wait for page to load and get the html nodes required
+    let gemInvOverview = document.querySelector('app-inventory-gems');
+    while(!gemInvOverview) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      gemInvOverview = document.querySelector('app-inventory-gems');
+    }
+    let gemInvTopBar = gemInvOverview.firstChild.firstChild.firstChild;
+    // Create button
+    const buttonContainer = document.createElement('div');
+    const fuseFrenzyButton = document.createElement('div');
+    fuseFrenzyButton.id = 'fuseFrenzyButton';
+    fuseFrenzyButton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
+    fuseFrenzyButton.innerText = 'Fuse Frenzy';
+    // Add button
+    buttonContainer.appendChild(fuseFrenzyButton);
+    gemInvTopBar.appendChild(buttonContainer);
+    fuseFrenzyButton.onclick = () => {
+      this.fuseFrenzy();
+    };
+  }
+
+  fuseFrenzy() {
+    // First of all, sort by level (descending) and filter frenzy gems out
+    let gems = this.gameData.playerInventoryService.gems.filter(
+        gem => gem.gem_type != 'frenzy' && gem.on_market === 0 && gem.trashed === 0
+    ).toSorted(
+        (gemA, gemB) => gemB.gem_level - gemA.gem_level
+    )
+    // take the ids of the last 3 gems and fuse
+    const numGems = gems.length;
+    const lowestLevelGems = [gems[numGems - 1].id, gems[numGems - 2].id, gems[numGems - 3].id];
+    const frenzyLevel = Math.round((gems[numGems - 1].gem_level + gems[numGems - 2].gem_level + gems[numGems - 3].gem_level) / 3);
+    this.gameData.httpClient.post('/inventory/fuse-frenzy-gem', {gemIds: lowestLevelGems}).subscribe(
+      val => {
+        this.gameData.snackbarService.openSnackbar(`A level ${frenzyLevel} frenzy gem was created.`); //feedback popup
+      },
+      response => {
+        this.gameData.snackbarService.openSnackbar(`The gem failed to be created.\n(too fast for the server?)`);
+        console.log('QuestBS: Frenzy gem could not be created.', response);
+      }
+    );
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -1427,7 +1476,7 @@ function getCatacombEndTime(numMobs, actionTimerSeconds, extraSeconds=0) {
 }
 
 function getStatRatios(statBlockElem) {
-  /* Given an element statBlockElem containing rows of the 4 stats displayed at  
+  /* Given an element statBlockElem containing rows of the 4 stats displayed at 
   the top of the page, return the ratios between the stats
   */
   const stats = [];
@@ -1439,7 +1488,7 @@ function getStatRatios(statBlockElem) {
 
   const minStat = Math.min(...stats);
   return [
-    (stats[0] / minStat).toFixed(2), 
+    (stats[0] / minStat).toFixed(2),
     (stats[1] / minStat).toFixed(2),
     (stats[2] / minStat).toFixed(2),
     (stats[3] / minStat).toFixed(2),
