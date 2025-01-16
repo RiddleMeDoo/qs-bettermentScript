@@ -35,6 +35,7 @@ class Script {
     this.kdExploLevel = 0;
     this.playerId;
     this.gameData;
+    this.gems = [];
 
     //observer setup
     this.initObservers();
@@ -909,6 +910,7 @@ class Script {
       'catacombs,tome_store': () => this.tomeObserver.disconnect(),
       'wb,chests': () => this.wbDropsObserver.disconnect(),
       'portal': () => { setTimeout(this.initPlayerData.bind(this), 2000)},
+      'inventory,gems': () => { this.gems = [] },
     }
     if(stop[pathname]) {
       stop[pathname]();
@@ -1436,26 +1438,31 @@ class Script {
   }
 
   async fuseFrenzy() {
-    // First of all, sort by level (descending) and filter frenzy gems out
-    let gems = this.gameData.playerInventoryService.gems.filter(
-        gem => gem.gem_type != 'frenzy' && gem.on_market === 0 && gem.trashed === 0
-    ).toSorted(
-        (gemA, gemB) => gemB.gem_level - gemA.gem_level
-    )
-    // take the ids of the last 3 gems and fuse
-    const numGems = gems.length;
-    const lowestLevelGems = [gems[numGems - 1].id, gems[numGems - 2].id, gems[numGems - 3].id];
-    const frenzyLevel = Math.round((gems[numGems - 1].gem_level + gems[numGems - 2].gem_level + gems[numGems - 3].gem_level) / 3);
+    // If this.gems has no gems, get gems from code
+    if (this.gems.length < 1) {
+      // Sort by level (descending) and filter frenzy gems out
+      this.gems = this.gameData.playerInventoryService.gems.filter(
+          gem => gem.gem_type != 'frenzy' && gem.on_market === 0 && gem.trashed === 0
+      ).toSorted(
+          (gemA, gemB) => gemB.gem_level - gemA.gem_level
+      );
+    }
+    if (this.gems.length < 3) {
+      // No valid gems to fuse, return early
+      this.gameData.snackbarService.openSnackbar(`There aren't enough gems to fuse!`);
+      return;
+    }
+
+    // take the ids of the last 3 gems (lowest level gems) and fuse
+    const lowestLevelGems = [this.gems.pop(), this.gems.pop(), this.gems.pop()];
+    const frenzyLevel = Math.round((lowestLevelGems[0].gem_level + lowestLevelGems[1].gem_level + lowestLevelGems[2].gem_level) / 3);
     // Disable fuse button until gem inventory has been updated
     const fuseButton = document.querySelector('#fuseFrenzyButton');
     fuseButton.disabled = true;
     fuseButton.className = 'mat-focus-indicator mat-stroked-button mat-button-base';
-    console.log(`Gems: ${lowestLevelGems}`);
-    this.gameData.httpClient.post('/inventory/fuse-frenzy-gem', {gemIds: lowestLevelGems}).subscribe(
+    this.gameData.httpClient.post('/inventory/fuse-frenzy-gem', {gemIds: [lowestLevelGems[0].id, lowestLevelGems[1].id, lowestLevelGems[2].id]}).subscribe(
       async val => {
         this.gameData.snackbarService.openSnackbar(`A level ${frenzyLevel} frenzy gem was created.`); //feedback popup
-        // Wait for server to update gem inventory
-        await new Promise(resolve => setTimeout(resolve, 2700)); 
         fuseButton.disabled = false;
         fuseButton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
       },
