@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.7.6
+// @version      1.8.0
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @match        *://*.queslar.com/*
@@ -225,6 +225,9 @@ class Script {
 
     // Get kd exploration level for wb drops
     await this.updateKdInfo();
+
+    // Other misc player refreshing stuff
+    this.gems = [];
   }
 
   async getPartyActions() {
