@@ -1470,7 +1470,7 @@ class Script {
         fuseButton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
       },
       response => {
-        this.gameData.snackbarService.openSnackbar(`The gem failed to be created.\n(too fast for the server?)`);
+        this.gameData.snackbarService.openSnackbar(`The gem failed to be created. (Gems may be out of sync with the server)`);
         console.log('QuestBS: Frenzy gem could not be created.', response);
         fuseButton.disabled = false;
         fuseButton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
