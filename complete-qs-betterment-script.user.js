@@ -36,6 +36,7 @@ class Script {
     this.playerId;
     this.gameData;
     this.gems = [];
+    this.sentRequest = false;
 
     //observer setup
     this.initObservers();
@@ -1435,12 +1436,14 @@ class Script {
     // Add button
     buttonContainer.appendChild(fuseFrenzyButton);
     gemInvTopBar.appendChild(buttonContainer);
-    fuseFrenzyButton.onclick = async () => {
-      await this.fuseFrenzy();
+    fuseFrenzyButton.onclick = () => {
+      if (!this.sentRequest) {
+        this.fuseFrenzy();
+      }
     };
   }
 
-  async fuseFrenzy() {
+  fuseFrenzy() {
     // If this.gems has no gems, get gems from code
     if (this.gems.length < 1) {
       // Sort by level (descending) and filter frenzy gems out
@@ -1463,17 +1466,22 @@ class Script {
     const fuseButton = document.querySelector('#fuseFrenzyButton');
     fuseButton.disabled = true;
     fuseButton.className = 'mat-focus-indicator mat-stroked-button mat-button-base';
+    this.sentRequest = true;
     this.gameData.httpClient.post('/inventory/fuse-frenzy-gem', {gemIds: [lowestLevelGems[0].id, lowestLevelGems[1].id, lowestLevelGems[2].id]}).subscribe(
-      async val => {
+      val => {
         this.gameData.snackbarService.openSnackbar(`A level ${frenzyLevel} frenzy gem was created.`); //feedback popup
-        fuseButton.disabled = false;
-        fuseButton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
+        setTimeout((button) => {
+          button.disabled = false;
+          button.className = 'mat-focus-indicator mat-raised-button mat-button-base';
+          this.sentRequest = false;
+        }, 300, fuseButton);
       },
       response => {
         this.gameData.snackbarService.openSnackbar(`The gem failed to be created. (Gems may be out of sync with the server)`);
         console.log('QuestBS: Frenzy gem could not be created.', response);
         fuseButton.disabled = false;
         fuseButton.className = 'mat-focus-indicator mat-raised-button mat-button-base';
+        this.sentRequest = false;
       }
     );
   }
