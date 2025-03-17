@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Queslar Betterment Script
 // @namespace    https://www.queslar.com
-// @version      1.8.0
+// @version      1.8.1
 // @description  A script that lets you know more info about quests and other QOL improvements
 // @author       RiddleMeDoo
 // @match        *://*.queslar.com/*
@@ -267,6 +267,34 @@ class Script {
       await new Promise(resolve => setTimeout(resolve, 200));
     }
     this.kdExploLevel = kdService.kingdomData.explorations.level;
+  }
+
+  async getResIncomePerAction(includeTaxed=true) {
+    /**
+     * Returns a quick calculation of how much res partners are generating for income or tax purposes
+    **/
+    let partners = this.gameData.playerPartnerService?.partnerData;
+    if (!this.gameData.playerPartnerService?.hasPartners) {
+      return 0;
+    }
+    while (!Object.values(partners)[0].partnerActionData) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      partners = this.gameData.playerPartnerService?.partnerData;
+    }
+    let incomeRes = 0;
+    for (const partner of Object.values(partners)) {
+      let incomePerPartner = 0;
+      if (includeTaxed) {
+        incomePerPartner += (partner.partnerActionData.income.tax ?? 0) + (partner.partnerActionData.income.efficiency ?? 0);
+      } else {
+        incomePerPartner += partner.partnerActionData.income.meat ?? partner.partnerActionData.income.iron ?? partner.partnerActionData.wood ?? partner.partnerActionData.income.stone ?? 0;
+      }
+      // Calculate res per action per partner
+      const timeInterval = 18 / (0.1 + partner.boosts.speed / (partner.boosts.speed + 2500));
+      const harvestsPerAction = 6 / timeInterval;
+      incomeRes += incomePerPartner * harvestsPerAction;
+    }
+    return incomeRes;
   }
 
   initObservers() {
@@ -1070,6 +1098,21 @@ class Script {
 
         return await this.getQuestInfoElem(actionsNeeded);
 
+      } else if (objectiveElemText.length >= 5 && objectiveElemText[4].toLowerCase() === 'taxation' && this.quest.villageSize == 1) {
+        // Create N/A end time first, update later when we have partner data
+        let actionsNeeded = -1;
+        timeElem = this.getTimeElem(actionsNeeded, row.firstChild.className, true);
+        timeElem.id = 'taxationEndTime';
+        row.appendChild(timeElem);
+
+        const resCollected = parseNumber(objectiveElemText[0]);
+        const resObjective = parseNumber(objectiveElemText[2]);
+        this.getResIncomePerAction().then(resIncome => {
+          actionsNeeded = Math.ceil((resObjective - resCollected) / resIncome);
+          const replacementEndTime = this.getTimeElem(actionsNeeded, row.firstChild.className, true);
+          timeElem.innerText = replacementEndTime.innerText;
+        });
+        
       } else {
         timeElem = this.getTimeElem(-1, row.firstChild.className, isVillage);
         row.appendChild(timeElem);
@@ -1116,6 +1159,15 @@ class Script {
           //Insert end time
           const objective = parseNumber(objectiveText[0]);
           timeElem = this.getTimeElem(objective, row.firstChild.className, true);
+        } else if (objectiveText.length >= 3 && objectiveText[2] === 'taxation' && this.quest.villageSize == 1) {
+          timeElem = this.getTimeElem(-1, row.firstChild.className, true);
+          // We can calculate end time using a single person's res income
+          this.getResIncomePerAction().then(resIncome => {
+            const objective = parseNumber(objectiveText[0]);
+            // get num actions needed to fulfill objective
+            const replacementEndTime = this.getTimeElem(Math.ceil(objective / resIncome), row.firstChild.className, true);
+            timeElem.innerText = replacementEndTime.innerText;
+          });
         } else {
           timeElem = this.getTimeElem(-1, row.firstChild.className, true);
         }
